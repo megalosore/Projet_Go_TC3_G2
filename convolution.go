@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 func slice2D(leny int, lenx int) [][]int { //Crée un double slice de dimenssion précisé(y=ligne , x=collone) rempli de 0
 	double_slice := make([][]int, leny)
@@ -37,7 +40,7 @@ func sum2D(kernel [][]int) int {
 	return result
 }
 
-func computeconvolution(image [][]int, kernel [][]int, x int, y int) int {
+func computeconvolution(result_array [][]int, image [][]int, kernel [][]int, x int, y int) {
 	size := len(kernel)
 	croped_image := crop(image, x, y, size)
 	result := 0
@@ -48,9 +51,9 @@ func computeconvolution(image [][]int, kernel [][]int, x int, y int) int {
 	}
 	somme := sum2D(kernel) //On normalise le resultat par la somme des coefficients du filtre si le filtre le permet
 	if somme != 0 {
-		return result / somme
+		result_array[y][x] = result / somme
 	} else {
-		return result
+		result_array[y][x] = result
 	}
 }
 
@@ -60,14 +63,15 @@ func convolute(image_array [][]int, kernel [][]int) [][]int { //Fonction a appel
 	result := slice2D(leny, lenx)
 	for i := 0; i < leny; i++ {
 		for j := 0; j < lenx; j++ {
-			result[i][j] = computeconvolution(image_array, kernel, j, i)
+			go computeconvolution(result, image_array, kernel, j, i)
 		}
 	}
 	return result
 }
 
 func main() {
-	image := slice2D(10, 10)
+	start := time.Now()
+	image := slice2D(200, 200)
 	for i := 0; i < len(image); i++ {
 		for j := 0; j < len(image[0]); j++ {
 			image[i][j] = j + 10*i
@@ -76,5 +80,7 @@ func main() {
 	kernel := slice2D(3, 3)
 	kernel[1][1] = 1
 	final := convolute(image, kernel)
-	fmt.Printf("%v", final)
+	elapsed := time.Since(start)
+	fmt.Printf("Temps: %s", elapsed)
+	final = final
 }
