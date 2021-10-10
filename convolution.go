@@ -13,18 +13,21 @@ func slice2D(leny int, lenx int) [][]int { //Crée un double slice de dimenssion
 	return double_slice
 }
 
-func crop(image [][]int, x int, y int, size int) [][]int { // récupére un carré de l'image originale centré en x,y et de dimension size*size
-	img_result := slice2D(size, size)
+func agrandit(image [][]int) [][]int {
 	new_image := slice2D(len(image)+2, len(image[0])+2) //On recrée une version entouré de 0 de l'image originale pour traiter les cas des x,y en bordures
 	for i := 1; i < len(new_image)-1; i++ {
 		for j := 1; j < len(new_image[0])-1; j++ {
 			new_image[i][j] = image[i-1][j-1]
 		}
 	}
+	return new_image
+}
+func crop(image_agrandit [][]int, x int, y int, size int) [][]int { // récupére un carré de l'image originale centré en x,y et de dimension size*size
+	img_result := slice2D(size, size)
 
 	for ligne := 0; ligne < size; ligne++ { //On remplie le carré par les valleurs correspondantes
 		for collone := 0; collone < size; collone++ {
-			img_result[ligne][collone] = new_image[y+ligne][x+collone]
+			img_result[ligne][collone] = image_agrandit[y+ligne][x+collone]
 		}
 	}
 	return img_result
@@ -40,9 +43,9 @@ func sum2D(kernel [][]int) int {
 	return result
 }
 
-func computeconvolution(result_array [][]int, image [][]int, kernel [][]int, x int, y int) {
+func computeconvolution(result_array [][]int, image_agrandit [][]int, kernel [][]int, x int, y int) {
 	size := len(kernel)
-	croped_image := crop(image, x, y, size)
+	croped_image := crop(image_agrandit, x, y, size)
 	result := 0
 	for i := 0; i < size; i++ {
 		for j := 0; j < size; j++ {
@@ -60,10 +63,18 @@ func computeconvolution(result_array [][]int, image [][]int, kernel [][]int, x i
 func convolute(image_array [][]int, kernel [][]int) [][]int { //Fonction a appeler pour effectuer la convolution d'une image et d'un filtre
 	leny := len(image_array)
 	lenx := len(image_array[0])
+	image_agrandit := agrandit(image_array) //On traite l'image pour rajouter des 0 sur les bordures
 	result := slice2D(leny, lenx)
+	//maxGoroutines := 10000 Multiplie le temps de calcul par 2 donc pas interessant dans notre cas
+	//guard := make(chan int, maxGoroutines) // On crée un channel qui va limiter le nombre de go routine qui tourneront en même temps
+
 	for i := 0; i < leny; i++ {
 		for j := 0; j < lenx; j++ {
-			go computeconvolution(result, image_array, kernel, j, i)
+			//guard <- 1 //On rempli le channel lors du lancement de la routine
+			//go func(j int, i int) {
+			computeconvolution(result, image_agrandit, kernel, j, i) //Utiliser des go routines est plus long que de faire le calcul sans
+			//<-guard //On vide le channel à la fin de la tache
+			//}(j, i)
 		}
 	}
 	return result
@@ -71,14 +82,16 @@ func convolute(image_array [][]int, kernel [][]int) [][]int { //Fonction a appel
 
 func main() {
 	start := time.Now()
-	image := slice2D(200, 200)
+
+	image := slice2D(3000, 3000) //Creation du 2D image pour tester
 	for i := 0; i < len(image); i++ {
 		for j := 0; j < len(image[0]); j++ {
 			image[i][j] = j + 10*i
 		}
 	}
-	kernel := slice2D(3, 3)
+	kernel := slice2D(3, 3) //Creation du kernel pour tester
 	kernel[1][1] = 1
+
 	final := convolute(image, kernel)
 	elapsed := time.Since(start)
 	fmt.Printf("Temps: %s", elapsed)
