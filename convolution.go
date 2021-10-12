@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-func slice2D(leny int, lenx int) [][]int { //Crée un double slice de dimenssion précisé(y=ligne , x=collone) rempli de 0
-	double_slice := make([][]int, leny)
+func slice2D(leny int, lenx int) [][]int16 { //Crée un double slice de dimenssion précisé(y=ligne , x=collone) rempli de 0
+	double_slice := make([][]int16, leny)
 	for i := range double_slice {
-		double_slice[i] = make([]int, lenx)
+		double_slice[i] = make([]int16, lenx)
 	}
 	return double_slice
 }
 
-func agrandie(image [][]int) [][]int {
+func agrandie(image [][]int16) [][]int16 {
 	new_image := slice2D(len(image)+2, len(image[0])+2) //On recrée une version entouré de 0 de l'image originale pour traiter les cas des x,y en bordures
 	for i := 1; i < len(new_image)-1; i++ {
 		for j := 1; j < len(new_image[0])-1; j++ {
@@ -22,7 +22,7 @@ func agrandie(image [][]int) [][]int {
 	}
 	return new_image
 }
-func crop(image_agrandie [][]int, x int, y int, size int) [][]int { // récupére un carré de l'image originale centré en x,y et de dimension size*size
+func crop(image_agrandie [][]int16, x int, y int, size int) [][]int16 { // récupére un carré de l'image originale centré en x,y et de dimension size*size
 	img_result := slice2D(size, size)
 
 	for ligne := 0; ligne < size; ligne++ { //On remplie le carré par les valleurs correspondantes
@@ -33,8 +33,8 @@ func crop(image_agrandie [][]int, x int, y int, size int) [][]int { // récupér
 	return img_result
 }
 
-func sum2D(kernel [][]int) int { //Ajoute tout les coefficients du kernel
-	result := 0
+func sum2D(kernel [][]int16) int16 { //Ajoute tout les coefficients du kernel
+	result := int16(0)
 	for i := range kernel {
 		for j := range kernel[0] {
 			result += kernel[i][j]
@@ -43,10 +43,10 @@ func sum2D(kernel [][]int) int { //Ajoute tout les coefficients du kernel
 	return result
 }
 
-func computeconvolution(result_array [][]int, image_agrandie [][]int, kernel [][]int, x int, y int) {
+func computeconvolution(result_array [][]int16, image_agrandie [][]int16, kernel [][]int16, x int, y int) {
 	size := len(kernel)
 	croped_image := crop(image_agrandie, x, y, size) //On récupère une version size*size entourant le pixel que l'on veut traiter
-	result := 0
+	result := int16(0)
 	for i := 0; i < size; i++ {
 		for j := 0; j < size; j++ {
 			result += kernel[i][j] * croped_image[size-i-1][size-j-1] // On effectue le calcul de la convolution on ajoutant les elements opposé entre le filtre et l'image cropé
@@ -56,11 +56,11 @@ func computeconvolution(result_array [][]int, image_agrandie [][]int, kernel [][
 	if somme != 0 {
 		result_array[y][x] = result / somme
 	} else {
-		result_array[y][x] = result
+		result_array[y][x] = int16(result)
 	}
 }
 
-func line_compute(result_array [][]int, image_agrandie [][]int, kernel [][]int, y int, lenx int, leny int, nb_ligne int) { // Calcule la convolution sur un certain nombre de ligne
+func line_compute(result_array [][]int16, image_agrandie [][]int16, kernel [][]int16, y int, lenx int, leny int, nb_ligne int) { // Calcule la convolution sur un certain nombre de ligne
 	for i := y; i < y+nb_ligne; i++ {
 		for j := 0; j < lenx; j++ {
 			computeconvolution(result_array, image_agrandie, kernel, j, i) //Calcule la convolution pour un pixel
@@ -68,7 +68,7 @@ func line_compute(result_array [][]int, image_agrandie [][]int, kernel [][]int, 
 	}
 }
 
-func convolute(image_array [][]int, kernel [][]int) [][]int { //Fonction à appeler pour effectuer la convolution d'une image et d'un filtre
+func convolute(image_array [][]int16, kernel [][]int16) [][]int16 { //Fonction à appeler pour effectuer la convolution d'une image et d'un filtre
 	leny := len(image_array)
 	lenx := len(image_array[0])
 	image_agrandie := agrandie(image_array) //On traite l'image pour rajouter des 0 sur les bordures
@@ -92,7 +92,7 @@ func main() {
 	image := slice2D(1920, 1080) //Creation d'une image HD pour tester
 	for i := 0; i < len(image); i++ {
 		for j := 0; j < len(image[0]); j++ {
-			image[i][j] = j + 10*i
+			image[i][j] = int16(j + 10*i)
 		}
 	}
 	kernel := slice2D(3, 3) //Creation du kernel identité pour tester
