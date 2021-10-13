@@ -73,7 +73,7 @@ func convolute(image_array [][]int16, kernel [][]int16) [][]int16 { //Fonction �
 	lenx := len(image_array[0])
 	image_agrandie := agrandie(image_array) //On traite l'image pour rajouter des 0 sur les bordures
 	result := slice2D(leny, lenx)
-	nb_routine := 12                    //On définit le nombre de go routine max
+	const nb_routine = 12               //On définit le nombre de go routine max
 	nb_ligne := (leny / nb_routine) + 1 //On rajoute 1 pour éviter les cas ou leny proche de 12
 
 	for i := 0; i < leny; i += nb_ligne {
