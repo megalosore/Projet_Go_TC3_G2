@@ -2,8 +2,24 @@ package main
 
 import (
 	"fmt"
+	"image"
+	"image/color"
 	"time"
 )
+
+func imgToSlice(image image.Image) [][]int16 { // Convertit une image en un tableau 2D d'int16 exploitable pour la convolution, en nuances de gris
+	lenX := image.Bounds().Size().X
+	lenY := image.Bounds().Size().Y
+	returnImg := slice2D(lenY, lenX)
+
+	for i := 0; i < lenY; i++ {
+		for j := 0; j < lenX; j++ {
+			RGBA := color.RGBAModel.Convert(image.At(j, i)).(color.RGBA) // On récupère la couleur du pixel (j, i) qu'on convertit en un struct color.RGBA contenant les valeurs RGB dans la range 0-255
+			returnImg[i][j] = int16((RGBA.R + RGBA.G + RGBA.B) / 3)
+		}
+	}
+	return returnImg
+}
 
 func slice2D(lenY int, lenX int) [][]int16 { // Crée un double slice de dimension précisée (y=ligne , x=colonne) rempli de 0
 	doubleSlice := make([][]int16, lenY)
@@ -90,16 +106,16 @@ func convolute(imageArray [][]int16, kernel [][]int16) [][]int16 { // Fonction �
 func main() {
 	start := time.Now()
 
-	image := slice2D(1920, 1080) // Création d'une image HD pour tester
-	for i := 0; i < len(image); i++ {
-		for j := 0; j < len(image[0]); j++ {
-			image[i][j] = int16(j + 10*i)
+	img := slice2D(1920, 1080) // Création d'une image HD pour tester
+	for i := 0; i < len(img); i++ {
+		for j := 0; j < len(img[0]); j++ {
+			img[i][j] = int16(j + 10*i)
 		}
 	}
 	kernel := slice2D(3, 3) // Création du kernel identité pour tester
 	kernel[1][1] = 1
 
-	final := convolute(image, kernel)
+	final := convolute(img, kernel)
 	elapsed := time.Since(start)
 	fmt.Printf("Temps: %s\n", elapsed)
 	_ = final
