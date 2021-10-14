@@ -51,7 +51,7 @@ func openImg(filePath string) (image.Image, error) {
 
 // Write img in file
 func writeImg(img *image.Gray, imgName string) error {
-	f, err := os.Create(imgName + "png")
+	f, err := os.Create(imgName + ".png")
 	if err != nil {
 		return err
 	}
