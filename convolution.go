@@ -11,14 +11,26 @@ func imgToSlice(image image.Image) [][]int16 {
 	lenY := image.Bounds().Size().Y
 	returnImg := slice2D(lenY, lenX)
 
-	// On récupère la couleur du pixel (j, i) qu'on convertit en un struct color.RGBA contenant les valeurs RGB dans la range 0-255
 	for i := 0; i < lenY; i++ {
 		for j := 0; j < lenX; j++ {
+			// On récupère la couleur du pixel (j, i) qu'on convertit en un struct color.RGBA contenant les valeurs RGB dans la range 0-255
 			RGBA := color.RGBAModel.Convert(image.At(j, i)).(color.RGBA)
 			returnImg[i][j] = int16((RGBA.R + RGBA.G + RGBA.B) / 3)
 		}
 	}
 	return returnImg
+}
+
+// Convertit une slice 2D en une Image en nuances de gris
+func sliceToImg(slice [][]int16) image.Gray {
+	img := image.NewGray(image.Rect(0, 0, len(slice[0]), len(slice)))
+
+	for i := 0; i < len(slice); i++ {
+		for j := 0; j < len(slice[0]); j++ {
+			img.Set(j, i, color.Gray{Y: uint8(slice[i][j])})
+		}
+	}
+	return *img
 }
 
 // Crée un double slice de dimension précisée (y=ligne , x=colonne) rempli de 0
@@ -110,7 +122,7 @@ func convolute(imageArray [][]int16, kernel [][]int16) [][]int16 {
 	nbLigne := (lenY / nbRoutine) + 1
 
 	for i := 0; i < lenY; i += nbLigne {
-		// On vérifie qu'on ne dépasse par le nombre de lignes max
+		// On vérifie qu'on ne dépasse pas le nombre de lignes max
 		if i+nbLigne > lenY {
 			go lineCompute(result, imageAgrandie, kernel, i, lenX, lenY-i)
 		} else {
