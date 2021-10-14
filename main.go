@@ -22,5 +22,8 @@ func main() {
 	finalImage := sliceToImg(final)
 	elapsed := time.Since(start)
 	fmt.Printf("Temps: %s\n", elapsed)
-	writeImg(finalImage, "output")
+	err = writeImg(finalImage, "output")
+	if err != nil {
+		panic(err)
+	}
 }
