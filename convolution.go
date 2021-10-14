@@ -89,6 +89,12 @@ func computeconvolution(resultArray [][]int16, imgAgrandie [][]int16, kernel [][
 			result += kernel[i][j] * cropedImage[size-i-1][size-j-1]
 		}
 	}
+	if result < 0 { //On borne notre resultat entre 0 et 255
+		result = -1 * result
+	}
+	if result > 255 {
+		result = 255
+	}
 
 	// On normalise le résultat par la somme des coefficients du filtre si le filtre le permet
 	somme := sum2D(kernel)
@@ -118,7 +124,7 @@ func convolute(imageArray [][]int16, kernel [][]int16) [][]int16 {
 	result := slice2D(lenY, lenX)
 	// On définit le nombre de go routine max
 	const nbRoutine = 12
-	// On rajoute 1 pour éviter les cas ou lenY proche de 12
+	// On rajoute 1 pour éviter les cas ou nbLigne est arrondit à l'inferieur
 	nbLigne := (lenY / nbRoutine) + 1
 
 	for i := 0; i < lenY; i += nbLigne {

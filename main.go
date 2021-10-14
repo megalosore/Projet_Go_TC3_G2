@@ -16,11 +16,15 @@ func main() {
 		}
 	}
 	// Création du kernel identité pour tester
-	kernel := slice2D(3, 3)
-	kernel[1][1] = 1
+	kernel := [][]int16{
+		{0, -1, 0},
+		{-1, 4, -1},
+		{0, -1, 0},
+	}
 
 	final := convolute(img, kernel)
 	elapsed := time.Since(start)
 	fmt.Printf("Temps: %s\n", elapsed)
+	//fmt.Printf("%v", final)
 	_ = final
 }
