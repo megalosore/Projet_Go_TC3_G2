@@ -7,7 +7,10 @@ import (
 
 func main() {
 	start := time.Now()
-	img, _ := openImg("")
+	img, err := openImg("")
+	if err != nil {
+		panic(err)
+	}
 	imgConverted := imgToSlice(img)
 	kernel := [][]int16{
 		{0, -1, 0},
