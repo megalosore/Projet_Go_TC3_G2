@@ -6,8 +6,8 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	"image/png"
-	_ "image/png"
 	"os"
+	"sync"
 )
 
 // Convertit une image en un tableau 2D d'int16 exploitable pour la convolution, en nuances de gris
@@ -136,13 +136,14 @@ func computeconvolution(resultArray [][]int16, imgAgrandie [][]int16, kernel [][
 }
 
 // Calcule la convolution sur un certain nombre de lignes
-func lineCompute(resultArray [][]int16, imageAgrandie [][]int16, kernel [][]int16, y int, lenX int, nbLigne int) {
+func lineCompute(resultArray [][]int16, imageAgrandie [][]int16, kernel [][]int16, y int, lenX int, nbLigne int, waitGroup *sync.WaitGroup) {
 	for i := y; i < y+nbLigne; i++ {
 		for j := 0; j < lenX; j++ {
 			// Calcule la convolution pour un pixel
 			computeconvolution(resultArray, imageAgrandie, kernel, j, i)
 		}
 	}
+	waitGroup.Done()
 }
 
 // Fonction à appeler pour effectuer la convolution d'une image et d'un filtre
@@ -156,14 +157,17 @@ func convolute(imageArray [][]int16, kernel [][]int16) [][]int16 {
 	const nbRoutine = 12
 	// On rajoute 1 pour éviter les cas ou nbLigne est arrondit à l'inferieur
 	nbLigne := (lenY / nbRoutine) + 1
+	var waitGroup sync.WaitGroup
 
 	for i := 0; i < lenY; i += nbLigne {
+		waitGroup.Add(1)
 		// On vérifie qu'on ne dépasse pas le nombre de lignes max
 		if i+nbLigne > lenY {
-			go lineCompute(result, imageAgrandie, kernel, i, lenX, lenY-i)
+			go lineCompute(result, imageAgrandie, kernel, i, lenX, lenY-i, &waitGroup)
 		} else {
-			go lineCompute(result, imageAgrandie, kernel, i, lenX, nbLigne)
+			go lineCompute(result, imageAgrandie, kernel, i, lenX, nbLigne, &waitGroup)
 		}
 	}
+	waitGroup.Wait()
 	return result
 }
