@@ -16,8 +16,8 @@ func main() {
 	}
 
 	final := convolute(imgConverted, kernel)
-	final_image := sliceToImg(final)
+	finalImage := sliceToImg(final)
 	elapsed := time.Since(start)
 	fmt.Printf("Temps: %s\n", elapsed)
-	writeImg(final_image, "output")
+	writeImg(finalImage, "output")
 }
