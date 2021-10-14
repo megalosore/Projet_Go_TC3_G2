@@ -3,6 +3,11 @@ package main
 import (
 	"image"
 	"image/color"
+	_ "image/gif"
+	_ "image/jpeg"
+	"image/png"
+	_ "image/png"
+	"os"
 )
 
 // Convertit une image en un tableau 2D d'int16 exploitable pour la convolution, en nuances de gris
@@ -22,7 +27,7 @@ func imgToSlice(image image.Image) [][]int16 {
 }
 
 // Convertit une slice 2D en une Image en nuances de gris
-func sliceToImg(slice [][]int16) image.Gray {
+func sliceToImg(slice [][]int16) *image.Gray {
 	img := image.NewGray(image.Rect(0, 0, len(slice[0]), len(slice)))
 
 	for i := 0; i < len(slice); i++ {
@@ -30,7 +35,32 @@ func sliceToImg(slice [][]int16) image.Gray {
 			img.Set(j, i, color.Gray{Y: uint8(slice[i][j])})
 		}
 	}
-	return *img
+	return img
+}
+
+// Open an img from path
+func openImg(filePath string) (image.Image, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	img, _, err := image.Decode(f)
+	return img, err
+}
+
+// Write img in file
+func writeImg(img *image.Gray, imgName string) error {
+	f, err := os.Create(imgName + "png")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Encode to `PNG` with `DefaultCompression` level
+	// then save to file
+	err = png.Encode(f, img)
+	return err
 }
 
 // Crée un double slice de dimension précisée (y=ligne , x=colonne) rempli de 0
