@@ -3,8 +3,6 @@ package main
 import (
 	"image"
 	"image/color"
-	_ "image/gif"
-	_ "image/jpeg"
 	"sync"
 )
 
