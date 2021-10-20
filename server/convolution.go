@@ -5,8 +5,6 @@ import (
 	"image/color"
 	_ "image/gif"
 	_ "image/jpeg"
-	"image/png"
-	"os"
 	"sync"
 )
 
@@ -36,31 +34,6 @@ func sliceToImg(slice [][]int16) *image.Gray {
 		}
 	}
 	return img
-}
-
-// Open an img from path
-func openImg(filePath string) (image.Image, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	img, _, err := image.Decode(f)
-	return img, err
-}
-
-// Write img in file
-func writeImg(img *image.Gray, imgName string) error {
-	f, err := os.Create(imgName + ".png")
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	// Encode to `PNG` with `DefaultCompression` level
-	// then save to file
-	err = png.Encode(f, img)
-	return err
 }
 
 // Crée un double slice de dimension précisée (y=ligne , x=colonne) rempli de 0
