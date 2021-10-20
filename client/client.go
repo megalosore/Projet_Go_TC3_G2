@@ -53,7 +53,7 @@ func main() {
 		fmt.Printf("#DEBUG MAIN could not connect\n")
 		os.Exit(1)
 	} else {
-		url := "https://www.lycee-darche.fr/wp-content/uploads/2019/07/mountain-landscape-2031539_1920.jpg"
+		url := "https://f.hellowork.com/blogdumoderateur/2013/02/nyan-cat-gif-1.gif"
 		io.WriteString(conn, url+"\n")
 		defer conn.Close()
 		decoder := gob.NewDecoder(conn)
