@@ -81,6 +81,7 @@ func sum2D(kernel [][]int16) int16 {
 // Effectue la convolution pour 1 pixel
 func computeconvolution(resultArray [][]int16, imgAgrandie [][]int16, kernel [][]int16, x int, y int) {
 	size := len(kernel)
+	seuil := 0.3
 	// On récupère une version size*size entourant le pixel que l'on veut traiter
 	cropedImage := crop(imgAgrandie, x, y, size)
 	result := int16(0)
@@ -100,9 +101,14 @@ func computeconvolution(resultArray [][]int16, imgAgrandie [][]int16, kernel [][
 	// On normalise le résultat par la somme des coefficients du filtre si le filtre le permet
 	somme := sum2D(kernel)
 	if somme != 0 {
-		resultArray[y][x] = result / somme
+		resultArray[y][x] = int16(result / somme)
 	} else {
-		resultArray[y][x] = result
+		//seuillage pour les detections de contours
+		if result < int16(255*seuil) {
+			resultArray[y][x] = 0
+		} else {
+			resultArray[y][x] = 255
+		}
 	}
 }
 

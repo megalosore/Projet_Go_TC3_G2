@@ -63,9 +63,21 @@ func handleConnection(connection net.Conn, connum int) {
 			{-1, 4, -1},
 			{0, -1, 0},
 		}
+		kernel1 := [][]int16{
+			{-1, 0, 1},
+			{-1, 0, 1},
+			{-1, 0, 1},
+		}
+		kernel2 := [][]int16{
+			{-1, -1, -1},
+			{0, 0, 0},
+			{1, 1, 1},
+		}
 
-		final := convolute(imgConverted, kernel)
+		final := convolute(imgConverted, kernel)                 //Laplacien
+		final2 := convoluteSobel(imgConverted, kernel1, kernel2) //Sobel
 		finalImage := sliceToImg(final)
+		_ = final2 //Evite l'erreur "not used"
 		elapsed := time.Since(start)
 		fmt.Printf("Temps : %s\n", elapsed)
 

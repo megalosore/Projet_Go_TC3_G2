@@ -9,6 +9,7 @@ import (
 // Effectue la convolution pour 1 pixel
 func computeConvolutionSobel(resultArray [][]int16, imgAgrandie [][]int16, kernel1 [][]int16, kernel2 [][]int16, x int, y int) {
 	size := len(kernel1)
+	seuil := 0.2
 	// On récupère une version size*size entourant le pixel que l'on veut traiter
 	cropedImage := crop(imgAgrandie, x, y, size)
 	result1 := int16(0)
@@ -25,7 +26,12 @@ func computeConvolutionSobel(resultArray [][]int16, imgAgrandie [][]int16, kerne
 			result2 += kernel2[i][j] * cropedImage[size-i-1][size-j-1]
 		}
 	}
-	resultArray[y][x] = int16(math.Sqrt(math.Pow(float64(result1), 2)+math.Pow(float64(result2), 2))) / 4
+	result := math.Sqrt(math.Pow(float64(result1), 2)+math.Pow(float64(result2), 2)) / 4
+	if result < seuil*255 { //Seuillage
+		resultArray[y][x] = 0
+	} else {
+		resultArray[y][x] = 255
+	}
 }
 
 // Calcule la convolution sur un certain nombre de lignes
