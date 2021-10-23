@@ -3,10 +3,6 @@ package main
 import (
 	"image"
 	"image/color"
-	_ "image/gif"
-	_ "image/jpeg"
-	"image/png"
-	"os"
 	"sync"
 )
 
@@ -26,7 +22,7 @@ func imgToSlice(image image.Image) [][]int16 {
 	return returnImg
 }
 
-// Convertit une slice 2D en une Image en nuances de gris
+// Convertit une slice 2D en une image en nuances de gris
 func sliceToImg(slice [][]int16) *image.Gray {
 	img := image.NewGray(image.Rect(0, 0, len(slice[0]), len(slice)))
 
@@ -38,31 +34,6 @@ func sliceToImg(slice [][]int16) *image.Gray {
 	return img
 }
 
-// Open an img from path
-func openImg(filePath string) (image.Image, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	img, _, err := image.Decode(f)
-	return img, err
-}
-
-// Write img in file
-func writeImg(img *image.Gray, imgName string) error {
-	f, err := os.Create(imgName + ".png")
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	// Encode to `PNG` with `DefaultCompression` level
-	// then save to file
-	err = png.Encode(f, img)
-	return err
-}
-
 // Crée un double slice de dimension précisée (y=ligne , x=colonne) rempli de 0
 func slice2D(lenY int, lenX int) [][]int16 {
 	doubleSlice := make([][]int16, lenY)
@@ -72,7 +43,7 @@ func slice2D(lenY int, lenX int) [][]int16 {
 	return doubleSlice
 }
 
-// Crée une version entourée de 0 de l'image originale pour traiter les cas des x,y en bordures
+// Crée une version entourée de 0 de l'image originale pour traiter les cas des x,y en bordure
 func agrandie(image [][]int16) [][]int16 {
 	newImage := slice2D(len(image)+2, len(image[0])+2)
 	for i := 1; i < len(newImage)-1; i++ {
@@ -155,7 +126,7 @@ func convolute(imageArray [][]int16, kernel [][]int16) [][]int16 {
 	result := slice2D(lenY, lenX)
 	// On définit le nombre de go routine max
 	const nbRoutine = 12
-	// On rajoute 1 pour éviter les cas ou nbLigne est arrondit à l'inferieur
+	// On rajoute 1 pour éviter les cas ou nbLigne est arrondi à l'inférieur
 	nbLigne := (lenY / nbRoutine) + 1
 	var waitGroup sync.WaitGroup
 
