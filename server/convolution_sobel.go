@@ -7,9 +7,8 @@ import (
 )
 
 // Effectue la convolution pour 1 pixel
-func computeConvolutionSobel(resultArray [][]int16, imgAgrandie [][]int16, kernel1 [][]int16, kernel2 [][]int16, x int, y int) {
+func computeConvolutionSobel(resultArray [][]int16, imgAgrandie [][]int16, kernel1 [][]int16, kernel2 [][]int16, seuil float64, x int, y int) {
 	size := len(kernel1)
-	seuil := 0.2
 	// On récupère une version size*size entourant le pixel que l'on veut traiter
 	cropedImage := crop(imgAgrandie, x, y, size)
 	result1 := int16(0)
@@ -35,18 +34,18 @@ func computeConvolutionSobel(resultArray [][]int16, imgAgrandie [][]int16, kerne
 }
 
 // Calcule la convolution sur un certain nombre de lignes
-func lineComputeSobel(resultArray [][]int16, imageAgrandie [][]int16, kernel1 [][]int16, kernel2 [][]int16, y int, lenX int, nbLigne int, waitGroup *sync.WaitGroup) {
+func lineComputeSobel(resultArray [][]int16, imageAgrandie [][]int16, kernel1 [][]int16, kernel2 [][]int16, seuil float64, y int, lenX int, nbLigne int, waitGroup *sync.WaitGroup) {
 	for i := y; i < y+nbLigne; i++ {
 		for j := 0; j < lenX; j++ {
 			// Calcule la convolution pour un pixel
-			computeConvolutionSobel(resultArray, imageAgrandie, kernel1, kernel2, j, i)
+			computeConvolutionSobel(resultArray, imageAgrandie, kernel1, kernel2, seuil, j, i)
 		}
 	}
 	waitGroup.Done()
 }
 
 // Fonction à appeler pour effectuer la convolution d'une image et d'un filtre
-func convoluteSobel(imageArray [][]int16, kernel1 [][]int16, kernel2 [][]int16) [][]int16 {
+func convoluteSobel(imageArray [][]int16, kernel1 [][]int16, kernel2 [][]int16, seuil float64) [][]int16 {
 	lenY := len(imageArray)
 	lenX := len(imageArray[0])
 	// On traite l'image pour rajouter des 0 sur les bordures
@@ -62,9 +61,9 @@ func convoluteSobel(imageArray [][]int16, kernel1 [][]int16, kernel2 [][]int16) 
 		waitGroup.Add(1)
 		// On vérifie qu'on ne dépasse pas le nombre de lignes max
 		if i+nbLigne > lenY {
-			go lineComputeSobel(result, imageAgrandie, kernel1, kernel2, i, lenX, lenY-i, &waitGroup)
+			go lineComputeSobel(result, imageAgrandie, kernel1, kernel2, seuil, i, lenX, lenY-i, &waitGroup)
 		} else {
-			go lineComputeSobel(result, imageAgrandie, kernel1, kernel2, i, lenX, nbLigne, &waitGroup)
+			go lineComputeSobel(result, imageAgrandie, kernel1, kernel2, seuil, i, lenX, nbLigne, &waitGroup)
 		}
 	}
 	waitGroup.Wait()

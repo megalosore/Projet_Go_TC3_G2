@@ -46,8 +46,13 @@ func handleConnection(connection net.Conn, connum int) {
 			break
 		}
 
-		url := strings.TrimSuffix(inputLine, "\n")
-		fmt.Printf("#DEBUG %d RCV |%s|\n", connum, url)
+		argsString := strings.TrimSuffix(inputLine, "\n")
+		argsList := strings.Split(argsString, "\\")
+		url := argsList[0]
+		kernelType := argsList[1]
+		seuilValue := argsList[2]
+
+		fmt.Printf("#DEBUG %d RCV |%s| |%s| |%s|\n", connum, url, kernelType, seuilValue)
 
 		start := time.Now()
 		img, err := loadImgFromURL(url)
@@ -57,30 +62,53 @@ func handleConnection(connection net.Conn, connum int) {
 			break
 		}
 
-		imgConverted := imgToSlice(img)
-		kernel := [][]int16{
-			{0, -1, 0},
-			{-1, 4, -1},
-			{0, -1, 0},
-		}
-		kernel1 := [][]int16{
-			{-1, 0, 1},
-			{-1, 0, 1},
-			{-1, 0, 1},
-		}
-		kernel2 := [][]int16{
-			{-1, -1, -1},
-			{0, 0, 0},
-			{1, 1, 1},
+		var final [][]int16 //On initialise la valeur qui reçoit le resultat de nos calculs
+		var seuil float64   //On initialise la valeur qui recevra le seuil précisé ou pas par le client
+
+		if kernelType == "sobel" { //Si le client spécifie le Kernel de Sobel on l'utilise
+			kernel1 := [][]int16{
+				{-1, 0, 1},
+				{-1, 0, 1},
+				{-1, 0, 1},
+			}
+			kernel2 := [][]int16{
+				{-1, -1, -1},
+				{0, 0, 0},
+				{1, 1, 1},
+			}
+			if seuilValue != "" {
+				seuil, err = strconv.ParseFloat(seuilValue, 8)
+				if err != nil {
+					seuil = 0.1 //Default seuil value for Sobel
+				}
+			} else {
+				seuil = 0.1 //Default seuil value for Sobel
+			}
+			imgConverted := imgToSlice(img)
+			final = convoluteSobel(imgConverted, kernel1, kernel2, seuil)
+
+		} else { //On utilise le Laplacien par défaut sinon
+			kernel := [][]int16{
+				{0, -1, 0},
+				{-1, 4, -1},
+				{0, -1, 0},
+			}
+			if seuilValue != "" {
+				seuil, err = strconv.ParseFloat(seuilValue, 8)
+				if err != nil {
+					seuil = 0.3 //Default seuil value for Laplacian
+				}
+			} else {
+				seuil = 0.3 //Default seul value for Laplacian
+			}
+			imgConverted := imgToSlice(img)
+			final = convolute(imgConverted, kernel, seuil)
+
 		}
 
-		final := convolute(imgConverted, kernel)                 //Laplacien
-		final2 := convoluteSobel(imgConverted, kernel1, kernel2) //Sobel
 		finalImage := sliceToImg(final)
-		_ = final2 //Evite l'erreur "not used"
 		elapsed := time.Since(start)
 		fmt.Printf("Temps : %s\n", elapsed)
-
 		encoder := gob.NewEncoder(connection)
 		encoder.Encode(finalImage)
 		break

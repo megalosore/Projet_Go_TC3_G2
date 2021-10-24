@@ -79,9 +79,8 @@ func sum2D(kernel [][]int16) int16 {
 }
 
 // Effectue la convolution pour 1 pixel
-func computeconvolution(resultArray [][]int16, imgAgrandie [][]int16, kernel [][]int16, x int, y int) {
+func computeconvolution(resultArray [][]int16, imgAgrandie [][]int16, kernel [][]int16, seuil float64, x int, y int) {
 	size := len(kernel)
-	seuil := 0.3
 	// On récupère une version size*size entourant le pixel que l'on veut traiter
 	cropedImage := crop(imgAgrandie, x, y, size)
 	result := int16(0)
@@ -113,18 +112,18 @@ func computeconvolution(resultArray [][]int16, imgAgrandie [][]int16, kernel [][
 }
 
 // Calcule la convolution sur un certain nombre de lignes
-func lineCompute(resultArray [][]int16, imageAgrandie [][]int16, kernel [][]int16, y int, lenX int, nbLigne int, waitGroup *sync.WaitGroup) {
+func lineCompute(resultArray [][]int16, imageAgrandie [][]int16, kernel [][]int16, seuil float64, y int, lenX int, nbLigne int, waitGroup *sync.WaitGroup) {
 	for i := y; i < y+nbLigne; i++ {
 		for j := 0; j < lenX; j++ {
 			// Calcule la convolution pour un pixel
-			computeconvolution(resultArray, imageAgrandie, kernel, j, i)
+			computeconvolution(resultArray, imageAgrandie, kernel, seuil, j, i)
 		}
 	}
 	waitGroup.Done()
 }
 
 // Fonction à appeler pour effectuer la convolution d'une image et d'un filtre
-func convolute(imageArray [][]int16, kernel [][]int16) [][]int16 {
+func convolute(imageArray [][]int16, kernel [][]int16, seuil float64) [][]int16 {
 	lenY := len(imageArray)
 	lenX := len(imageArray[0])
 	// On traite l'image pour rajouter des 0 sur les bordures
@@ -140,9 +139,9 @@ func convolute(imageArray [][]int16, kernel [][]int16) [][]int16 {
 		waitGroup.Add(1)
 		// On vérifie qu'on ne dépasse pas le nombre de lignes max
 		if i+nbLigne > lenY {
-			go lineCompute(result, imageAgrandie, kernel, i, lenX, lenY-i, &waitGroup)
+			go lineCompute(result, imageAgrandie, kernel, seuil, i, lenX, lenY-i, &waitGroup)
 		} else {
-			go lineCompute(result, imageAgrandie, kernel, i, lenX, nbLigne, &waitGroup)
+			go lineCompute(result, imageAgrandie, kernel, seuil, i, lenX, nbLigne, &waitGroup)
 		}
 	}
 	waitGroup.Wait()
