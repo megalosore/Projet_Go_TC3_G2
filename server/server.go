@@ -50,9 +50,9 @@ func handleConnection(connection net.Conn, connum int) {
 		argsList := strings.Split(argsString, "\\")
 		url := argsList[0]
 		kernelType := argsList[1]
-		seuilValue := argsList[2]
+		thresholdValue := argsList[2]
 
-		fmt.Printf("#DEBUG %d RCV |%s| |%s| |%s|\n", connum, url, kernelType, seuilValue)
+		fmt.Printf("#DEBUG %d RCV |%s| |%s| |%s|\n", connum, url, kernelType, thresholdValue)
 
 		start := time.Now()
 		img, err := loadImgFromURL(url)
@@ -62,11 +62,11 @@ func handleConnection(connection net.Conn, connum int) {
 			break
 		}
 
-		var final [][]int16 //On initialise la valeur qui reçoit le resultat de nos calculs
-		var seuil float64   //On initialise la valeur qui recevra le seuil précisé ou pas par le client
+		var final [][]int16   // On initialise la valeur qui reçoit le resultat de nos calculs
+		var threshold float64 // On initialise la valeur qui recevra le seuil précisé ou non par le client
 
 		switch kernelType {
-		case "sobel": //Si le client spécifie le filtre de sobel on l'utilise
+		case "sobel": // Si le client spécifie le filtre de sobel on l'utilise
 			kernel1 := [][]int16{
 				{-1, 0, 1},
 				{-2, 0, 2},
@@ -77,18 +77,18 @@ func handleConnection(connection net.Conn, connum int) {
 				{0, 0, 0},
 				{1, 2, 1},
 			}
-			if seuilValue != "" {
-				seuil, err = strconv.ParseFloat(seuilValue, 8)
+			if thresholdValue != "" {
+				threshold, err = strconv.ParseFloat(thresholdValue, 8)
 				if err != nil {
-					seuil = 0.1 //Default seuil value for Sobel
+					threshold = 0.1 // Default threshold value for Sobel
 				}
 			} else {
-				seuil = 0.1 //Default seuil value for Sobel
+				threshold = 0.1 // Default threshold value for Sobel
 			}
 			imgConverted := imgToSlice(img)
-			final = convoluteDouble(imgConverted, kernel1, kernel2, seuil)
+			final = convoluteDouble(imgConverted, kernel1, kernel2, threshold)
 
-		case "prewit": //Si le client spécifie le filtre de prewit on l'utilise
+		case "prewit": // Si le client spécifie le filtre de prewit on l'utilise
 			kernel1 := [][]int16{
 				{-1, 0, 1},
 				{-1, 0, 1},
@@ -99,34 +99,34 @@ func handleConnection(connection net.Conn, connum int) {
 				{0, 0, 0},
 				{1, 1, 1},
 			}
-			if seuilValue != "" {
-				seuil, err = strconv.ParseFloat(seuilValue, 8)
+			if thresholdValue != "" {
+				threshold, err = strconv.ParseFloat(thresholdValue, 8)
 				if err != nil {
-					seuil = 0.07 //Default seuil value for Prewit
+					threshold = 0.07 // Default threshold value for Prewit
 				}
 			} else {
-				seuil = 0.07 //Default seuil value for Prewit
+				threshold = 0.07 // Default threshold value for Prewit
 			}
 			imgConverted := imgToSlice(img)
-			final = convoluteDouble(imgConverted, kernel1, kernel2, seuil)
+			final = convoluteDouble(imgConverted, kernel1, kernel2, threshold)
 
 		default:
-			//On utilise le Laplacien par défaut sinon
+			// On utilise le Laplacien par défaut sinon
 			kernel := [][]int16{
 				{0, -1, 0},
 				{-1, 4, -1},
 				{0, -1, 0},
 			}
-			if seuilValue != "" {
-				seuil, err = strconv.ParseFloat(seuilValue, 8)
+			if thresholdValue != "" {
+				threshold, err = strconv.ParseFloat(thresholdValue, 8)
 				if err != nil {
-					seuil = 0.3 //Default seuil value for Laplacian
+					threshold = 0.3 // Default threshold value for Laplacian
 				}
 			} else {
-				seuil = 0.3 //Default seul value for Laplacian
+				threshold = 0.3 // Default threshold value for Laplacian
 			}
 			imgConverted := imgToSlice(img)
-			final = convolute(imgConverted, kernel, seuil)
+			final = convolute(imgConverted, kernel, threshold)
 		}
 
 		finalImage := sliceToImg(final)
