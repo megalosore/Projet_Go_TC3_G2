@@ -102,10 +102,10 @@ func handleConnection(connection net.Conn, connum int) {
 			if seuilValue != "" {
 				seuil, err = strconv.ParseFloat(seuilValue, 8)
 				if err != nil {
-					seuil = 0.1 //Default seuil value for Sobel
+					seuil = 0.07 //Default seuil value for Prewit
 				}
 			} else {
-				seuil = 0.1 //Default seuil value for Sobel
+				seuil = 0.07 //Default seuil value for Prewit
 			}
 			imgConverted := imgToSlice(img)
 			final = convoluteDouble(imgConverted, kernel1, kernel2, seuil)
