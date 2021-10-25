@@ -8,15 +8,13 @@ import (
 	"image/png"
 	"io"
 	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
 )
 
 func getArgs() (int, string, string, string, string) {
-	portNumber := 0
-
-	var imageURL string
 	destPtr := flag.String("D", "", "Destination Path for the output file") //Mise en place des flags pour préciser les arguments optionnels
 	algPtr := flag.String("A", "", "Name of the algorithme that will be used by the server")
 	seuilPtr := flag.String("S", "", "Value of the threshold that will be used by the server")
@@ -25,26 +23,40 @@ func getArgs() (int, string, string, string, string) {
 	destinationPath := *destPtr //Attribution des valeurs des arguements optionnels
 	alg := *algPtr
 	seuil := *seuilPtr
+	imageURL := flag.Arg(1)
 
 	if len(flag.Args()) != 2 {
 		fmt.Printf("Usage: go run client.go [-D=destinationPath] [-A=Algorithme] [-S=seuilValue] <server_portnumber> <image_url>\n")
 		os.Exit(2)
-	} else {
-		fmt.Printf("#DEBUG ARGS portNumber : %s\n", flag.Arg(0))
-		var errPort error
-		portNumber, errPort = strconv.Atoi(flag.Arg(0))
-		if errPort != nil {
-			fmt.Printf("Error: incorrect port number")
+	}
+
+	fmt.Printf("#DEBUG ARGS portNumber : %s\n", flag.Arg(0))
+	portNumber, errPort := strconv.Atoi(flag.Arg(0))
+	if errPort != nil {
+		fmt.Printf("Error: incorrect port number\n")
+		fmt.Printf("Usage: go run client.go [-D=destinationPath] [-A=Algorithme] [-S=seuilValue] <server_portnumber> <image_url>\n")
+		os.Exit(2)
+	}
+
+	fmt.Printf("#DEBUG ARGS URL : %s\n", flag.Arg(1))
+	_, errUrl := url.ParseRequestURI(imageURL) //check if the URL respect HTTP URL format
+	if errUrl != nil {
+		fmt.Printf("Error: invalid URL\n")
+		fmt.Printf("Usage: go run client.go [-D=destinationPath] [-A=Algorithme] [-S=seuilValue] <server_portnumber> <image_url>\n")
+		os.Exit(2)
+	}
+	if seuil != "" {
+		seuilFloat, errSeuil := strconv.ParseFloat(seuil, 8)
+		if errSeuil != nil || seuilFloat < 0 || seuilFloat > 1 { //Check if the seuil value is a number between 0 and 1
+			fmt.Printf("Error: incorrect seuil value\n")
+			fmt.Printf("Please enter a seuil value between 0 and 1\n")
 			fmt.Printf("Usage: go run client.go [-D=destinationPath] [-A=Algorithme] [-S=seuilValue] <server_portnumber> <image_url>\n")
 			os.Exit(2)
 		}
-		imageURL = flag.Arg(1)
-		fmt.Printf("#DEBUG ARGS DestinationPath : %s\n", imageURL)
-		fmt.Printf("#DEBUG ARGS DestinationPath : %s\n", destinationPath)
-		fmt.Printf("#DEBUG ARGS Algorithme : %s\n", alg)
-		fmt.Printf("#DEBUG ARGS SeuilValue : %s\n", seuil)
-
 	}
+	fmt.Printf("#DEBUG ARGS DestinationPath : %s\n", destinationPath)
+	fmt.Printf("#DEBUG ARGS Algorithme : %s\n", alg)
+	fmt.Printf("#DEBUG ARGS SeuilValue : %s\n", seuil)
 	return portNumber, imageURL, destinationPath, alg, seuil
 }
 
