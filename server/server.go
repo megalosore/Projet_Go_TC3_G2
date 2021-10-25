@@ -65,7 +65,30 @@ func handleConnection(connection net.Conn, connum int) {
 		var final [][]int16 //On initialise la valeur qui reçoit le resultat de nos calculs
 		var seuil float64   //On initialise la valeur qui recevra le seuil précisé ou pas par le client
 
-		if kernelType == "sobel" { //Si le client spécifie le Kernel de Sobel on l'utilise
+		switch kernelType {
+		case "sobel": //Si le client spécifie le filtre de sobel on l'utilise
+			kernel1 := [][]int16{
+				{-1, 0, 1},
+				{-2, 0, 2},
+				{-1, 0, 1},
+			}
+			kernel2 := [][]int16{
+				{-1, -2, -1},
+				{0, 0, 0},
+				{1, 2, 1},
+			}
+			if seuilValue != "" {
+				seuil, err = strconv.ParseFloat(seuilValue, 8)
+				if err != nil {
+					seuil = 0.1 //Default seuil value for Sobel
+				}
+			} else {
+				seuil = 0.1 //Default seuil value for Sobel
+			}
+			imgConverted := imgToSlice(img)
+			final = convoluteDouble(imgConverted, kernel1, kernel2, seuil)
+
+		case "prewit": //Si le client spécifie le filtre de prewit on l'utilise
 			kernel1 := [][]int16{
 				{-1, 0, 1},
 				{-1, 0, 1},
@@ -85,9 +108,10 @@ func handleConnection(connection net.Conn, connum int) {
 				seuil = 0.1 //Default seuil value for Sobel
 			}
 			imgConverted := imgToSlice(img)
-			final = convoluteSobel(imgConverted, kernel1, kernel2, seuil)
+			final = convoluteDouble(imgConverted, kernel1, kernel2, seuil)
 
-		} else { //On utilise le Laplacien par défaut sinon
+		default:
+			//On utilise le Laplacien par défaut sinon
 			kernel := [][]int16{
 				{0, -1, 0},
 				{-1, 4, -1},
@@ -103,7 +127,6 @@ func handleConnection(connection net.Conn, connum int) {
 			}
 			imgConverted := imgToSlice(img)
 			final = convolute(imgConverted, kernel, seuil)
-
 		}
 
 		finalImage := sliceToImg(final)
