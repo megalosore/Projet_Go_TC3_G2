@@ -37,7 +37,7 @@ func getArgs() int {
 		os.Exit(1)
 
 	} else {
-		fmt.Printf("#DEBUG ARGS Port Number : %s\n", flag.Arg(0))
+		fmt.Printf("ARG Port Number : %s\n", flag.Arg(0))
 		portNumber, err := strconv.Atoi(flag.Arg(0))
 		if err != nil {
 			fmt.Printf("Usage: go run server.go <portnumber>\n")
@@ -170,8 +170,7 @@ func main() {
 	port := getArgs()
 	fmt.Printf("Creating TCP Server on port %d\n", port)
 	portString := fmt.Sprintf(":%s", strconv.Itoa(port))
-	fmt.Printf("#DEBUG MAIN PORT STRING |%s|\n", portString)
-	fmt.Printf("#Number of go routines: %d\n", nbRoutine)
+	fmt.Printf("Number of go routines: %d\n", nbRoutine)
 
 	ln, err := net.Listen("tcp", portString)
 	if err != nil {
