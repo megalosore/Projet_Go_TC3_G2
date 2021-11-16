@@ -1,6 +1,8 @@
 package main
 
-import "sync"
+import (
+	"sync"
+)
 
 // Effectue la convolution pour 1 pixel
 func computeconvolution(resultArray [][]int16, imgAgrandie [][]int16, kernel [][]int16, seuil float64, x int, y int) {
@@ -53,8 +55,6 @@ func convolute(imageArray [][]int16, kernel [][]int16, seuil float64) [][]int16 
 	// On traite l'image pour rajouter des 0 sur les bordures
 	imageAgrandie := agrandie(imageArray)
 	result := slice2D(lenY, lenX)
-	// On définit le nombre de go routine max
-	const nbRoutine = 12
 	// On rajoute 1 pour éviter les cas ou nbLigne est arrondi à l'inférieur
 	nbLigne := (lenY / nbRoutine) + 1
 	var waitGroup sync.WaitGroup

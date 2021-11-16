@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/gob"
+	"flag"
 	"fmt"
 	"image"
 	_ "image/gif"
@@ -11,19 +12,33 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
 )
 
+var nbRoutine int
+
 func getArgs() int {
 
-	if len(os.Args) != 2 {
-		fmt.Printf("Usage: go run server.go <portnumber>\n")
+	flag_nbRoutine := flag.Int("C", runtime.NumCPU(), "Number of go routine per client") //Mise en place des flags pour préciser les arguments optionnels
+	flag.Parse()
+	var errNbRoutine error
+	nbRoutine = *flag_nbRoutine
+
+	if errNbRoutine != nil {
+		fmt.Printf("ERROR: Invalid -C flag argument please provide an integer\n")
+		os.Exit(2)
+	}
+
+	if len(flag.Args()) != 1 {
+		fmt.Printf("Usage: go run server.go [-C=NumberRoutine] <portnumber>\n")
 		os.Exit(1)
+
 	} else {
-		fmt.Printf("#DEBUG ARGS Port Number : %s\n", os.Args[1])
-		portNumber, err := strconv.Atoi(os.Args[1])
+		fmt.Printf("#DEBUG ARGS Port Number : %s\n", flag.Arg(0))
+		portNumber, err := strconv.Atoi(flag.Arg(0))
 		if err != nil {
 			fmt.Printf("Usage: go run server.go <portnumber>\n")
 			os.Exit(1)
@@ -156,6 +171,7 @@ func main() {
 	fmt.Printf("#DEBUG MAIN Creating TCP Server on port %d\n", port)
 	portString := fmt.Sprintf(":%s", strconv.Itoa(port))
 	fmt.Printf("#DEBUG MAIN PORT STRING |%s|\n", portString)
+	fmt.Printf("#Number of go routines: %d\n", nbRoutine)
 
 	ln, err := net.Listen("tcp", portString)
 	if err != nil {
