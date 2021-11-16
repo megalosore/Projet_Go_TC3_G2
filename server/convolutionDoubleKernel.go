@@ -13,14 +13,10 @@ func computeConvolutionDouble(resultArray [][]int16, imgAgrandie [][]int16, kern
 	cropedImage := crop(imgAgrandie, x, y, size)
 	result1 := int16(0)
 	result2 := int16(0)
-	//var temp1 float64
-	//var temp2 float64
 	for i := 0; i < size; i++ {
 		for j := 0; j < size; j++ {
 			// On effectue le calcul de la convolution on ajoutant les éléments opposés entre le filtre et l'image cropée
 			// On implémente la convolution de Sobel
-			//temp1 = math.Pow(float64(kernel1[i][j]*cropedImage[size-i-1][size-j-1]), 2)
-			//temp2 = math.Pow(float64(kernel2[i][j]*cropedImage[size-i-1][size-j-1]), 2)
 			result1 += kernel1[i][j] * cropedImage[size-i-1][size-j-1]
 			result2 += kernel2[i][j] * cropedImage[size-i-1][size-j-1]
 		}
