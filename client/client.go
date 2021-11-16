@@ -117,6 +117,6 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Image successfully saved at %s", destinationPath)
+		fmt.Printf("Image successfully saved at %s\n", destinationPath)
 	}
 }
