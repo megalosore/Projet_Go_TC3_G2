@@ -41,7 +41,7 @@ func handleConnection(connection net.Conn, connum int) {
 	for {
 		inputLine, err := connReader.ReadString('\n')
 		if err != nil {
-			fmt.Printf("#DEBUG %d RCV ERROR no panic, just a client\n", connum)
+			fmt.Printf("%d RCV ERROR no panic, just a client\n", connum)
 			fmt.Printf("Error :|%s|\n", err.Error())
 			break
 		}
@@ -52,12 +52,12 @@ func handleConnection(connection net.Conn, connum int) {
 		kernelType := argsList[1]
 		thresholdValue := argsList[2]
 
-		fmt.Printf("#DEBUG %d RCV |%s| |%s| |%s|\n", connum, url, kernelType, thresholdValue)
+		fmt.Printf("%d RCV |%s| |%s| |%s|\n", connum, url, kernelType, thresholdValue)
 
 		start := time.Now()
 		img, err := loadImgFromURL(url)
 		if err != nil {
-			fmt.Printf("#DEBUG %d RCV ERROR no panic, just a client\n", connum)
+			fmt.Printf("%d RCV ERROR no panic, just a client\n", connum)
 			fmt.Printf("Error :|%s|\n", err.Error())
 			break
 		}
@@ -153,24 +153,24 @@ func loadImgFromURL(url string) (image.Image, error) {
 
 func main() {
 	port := getArgs()
-	fmt.Printf("#DEBUG MAIN Creating TCP Server on port %d\n", port)
+	fmt.Printf("Creating TCP Server on port %d\n", port)
 	portString := fmt.Sprintf(":%s", strconv.Itoa(port))
 	fmt.Printf("#DEBUG MAIN PORT STRING |%s|\n", portString)
 
 	ln, err := net.Listen("tcp", portString)
 	if err != nil {
-		fmt.Printf("#DEBUG MAIN Could not create listener\n")
+		fmt.Printf("Error: Could not create listener.\n")
 		panic(err)
 	}
 
 	connum := 1
 
 	for {
-		fmt.Printf("#DEBUG MAIN Accepting next connection\n")
+		fmt.Printf("Accepting next connection\n")
 		conn, errconn := ln.Accept()
 
 		if errconn != nil {
-			fmt.Printf("DEBUG MAIN Error when accepting next connection\n")
+			fmt.Printf("Error when accepting next connection\n")
 			panic(errconn)
 		}
 

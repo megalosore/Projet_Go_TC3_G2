@@ -30,7 +30,7 @@ func getArgs() (int, string, string, string, string) {
 		os.Exit(2)
 	}
 
-	fmt.Printf("#DEBUG ARGS portNumber : %s\n", flag.Arg(0))
+	fmt.Printf("ARG portNumber : %s\n", flag.Arg(0))
 	portNumber, errPort := strconv.Atoi(flag.Arg(0))
 	if errPort != nil {
 		fmt.Printf("Error: incorrect port number\n")
@@ -38,7 +38,7 @@ func getArgs() (int, string, string, string, string) {
 		os.Exit(2)
 	}
 
-	fmt.Printf("#DEBUG ARGS URL : %s\n", flag.Arg(1))
+	fmt.Printf("ARGS URL : %s\n", flag.Arg(1))
 	_, errUrl := url.ParseRequestURI(imageURL) // check if the URL respect HTTP URL format
 	if errUrl != nil {
 		fmt.Printf("Error: invalid URL\n")
@@ -54,9 +54,9 @@ func getArgs() (int, string, string, string, string) {
 			os.Exit(2)
 		}
 	}
-	fmt.Printf("#DEBUG ARGS DestinationPath : %s\n", destinationPath)
-	fmt.Printf("#DEBUG ARGS Algorithme : %s\n", alg)
-	fmt.Printf("#DEBUG ARGS thresholdValue : %s\n", threshold)
+	fmt.Printf("ARG DestinationPath : %s\n", destinationPath)
+	fmt.Printf("ARG Algorithme : %s\n", alg)
+	fmt.Printf("ARG thresholdValue : %s\n", threshold)
 	return portNumber, imageURL, destinationPath, alg, threshold
 }
 
@@ -96,13 +96,12 @@ func main() {
 	destinationPath = generateImgPath(destinationPath)
 	sendValue := imageURL + "\\" + alg + "\\" + threshold + "\n"
 
-	fmt.Printf("#DEBUG DIALING TCP Server on port %d\n", portNumber)
+	fmt.Printf("Dialing TCP Server on port %d\n", portNumber)
 	portString := fmt.Sprintf("127.0.0.1:%s", strconv.Itoa(portNumber))
-	fmt.Printf("#DEBUG MAIN PORT STRING |%s|\n", portString)
 	conn, err := net.Dial("tcp", portString)
 
 	if err != nil {
-		fmt.Printf("#DEBUG MAIN could not connect\n")
+		fmt.Printf("Error : Could not connect to server.\n")
 		os.Exit(3)
 	} else {
 		io.WriteString(conn, sendValue) // Send data to the server
@@ -117,6 +116,6 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Image successfully saved at %s\n", destinationPath)
+		fmt.Printf("Image successfully saved at %s.\n", destinationPath)
 	}
 }
