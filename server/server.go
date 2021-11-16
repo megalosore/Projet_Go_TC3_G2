@@ -69,7 +69,6 @@ func handleConnection(connection net.Conn, connum int) {
 
 		fmt.Printf("%d RCV |%s| |%s| |%s|\n", connum, url, kernelType, thresholdValue)
 
-		start := time.Now()
 		img, err := loadImgFromURL(url)
 		if err != nil {
 			fmt.Printf("%d RCV ERROR no panic, just a client\n", connum)
@@ -80,6 +79,7 @@ func handleConnection(connection net.Conn, connum int) {
 		var final [][]int16   // On initialise la valeur qui reçoit le resultat de nos calculs
 		var threshold float64 // On initialise la valeur qui recevra le seuil précisé ou non par le client
 
+		start := time.Now()
 		switch kernelType {
 		case "sobel": // Si le client spécifie le filtre de sobel on l'utilise
 			kernel1 := [][]int16{
