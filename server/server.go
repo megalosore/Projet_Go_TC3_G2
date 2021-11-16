@@ -22,10 +22,10 @@ var nbRoutine int
 
 func getArgs() int {
 
-	flag_nbRoutine := flag.Int("C", runtime.NumCPU(), "Number of go routine per client") //Mise en place des flags pour préciser les arguments optionnels
+	flagNbroutine := flag.Int("C", runtime.NumCPU(), "Number of go routine per client") //Mise en place des flags pour préciser les arguments optionnels
 	flag.Parse()
 	var errNbRoutine error
-	nbRoutine = *flag_nbRoutine
+	nbRoutine = *flagNbroutine
 
 	if errNbRoutine != nil {
 		fmt.Printf("ERROR: Invalid -C flag argument please provide an integer\n")
