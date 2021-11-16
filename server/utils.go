@@ -19,30 +19,30 @@ func sum2D(kernel [][]int16) int16 {
 }
 
 // Récupérer un carré de l'image originale centré en x,y et de dimension size*size
-func crop(imgAgrandie [][]int16, x int, y int, size int) [][]int16 {
-	imgResult := slice2D(size, size)
+func crop(inputSlice [][]int16, x int, y int, size int) [][]int16 {
+	outputSlice := slice2D(size, size)
 
 	// On remplit le carré par les valeurs correspondantes
 	for ligne := 0; ligne < size; ligne++ {
 		for colonne := 0; colonne < size; colonne++ {
-			imgResult[ligne][colonne] = imgAgrandie[y+ligne][x+colonne]
+			outputSlice[ligne][colonne] = inputSlice[y-1+ligne][x-1+colonne]
 		}
 	}
-	return imgResult
+	return outputSlice
 }
 
 // Crée une version entourée de 0 de l'image originale pour traiter les cas des x,y en bordure
-func agrandie(image [][]int16) [][]int16 {
-	newImage := slice2D(len(image)+2, len(image[0])+2)
+func fillBorders(slice [][]int16) [][]int16 {
+	newImage := slice2D(len(slice)+2, len(slice[0])+2)
 	for i := 1; i < len(newImage)-1; i++ {
 		for j := 1; j < len(newImage[0])-1; j++ {
-			newImage[i][j] = image[i-1][j-1]
+			newImage[i][j] = slice[i-1][j-1]
 		}
 	}
 	return newImage
 }
 
-// Crée un double slice de dimension précisée (y=ligne , x=colonne) rempli de 0
+// Crée un double slice de dimension précisée (y=ligne, x=colonne) rempli de 0
 func slice2D(lenY int, lenX int) [][]int16 {
 	doubleSlice := make([][]int16, lenY)
 	for i := range doubleSlice {
@@ -51,7 +51,7 @@ func slice2D(lenY int, lenX int) [][]int16 {
 	return doubleSlice
 }
 
-// Convertit une slice 2D en une image en nuances de gris
+// Convertit un slice 2D en une image en nuances de gris
 func sliceToImg(slice [][]int16) *image.Gray {
 	img := image.NewGray(image.Rect(0, 0, len(slice[0]), len(slice)))
 
