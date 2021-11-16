@@ -15,6 +15,8 @@ import (
 )
 
 func getArgs() (int, string, string, string, string) {
+	usageString := "Usage: go run client.go [-D=destination_path] [-A=algorithm] [-S=threshold_value] <server_portnumber> <image_url>\n"
+
 	destPtr := flag.String("D", "", "Destination Path for the output file") // Mise en place des flags pour préciser les arguments optionnels
 	algPtr := flag.String("A", "", "Name of the algorithme that will be used by the server")
 	thresholdPtr := flag.String("S", "", "Value of the threshold that will be used by the server")
@@ -26,23 +28,21 @@ func getArgs() (int, string, string, string, string) {
 	imageURL := flag.Arg(1)
 
 	if len(flag.Args()) != 2 {
-		fmt.Printf("Usage: go run client.go [-D=destination_path] [-A=algorithm] [-S=threshold_value] <server_portnumber> <image_url>\n")
+		fmt.Printf(usageString)
 		os.Exit(2)
 	}
 
-	fmt.Printf("ARG portNumber : %s\n", flag.Arg(0))
 	portNumber, errPort := strconv.Atoi(flag.Arg(0))
 	if errPort != nil {
 		fmt.Printf("Error: incorrect port number\n")
-		fmt.Printf("Usage: go run client.go [-D=destination_path] [-A=algorithm] [-S=threshold_value] <server_portnumber> <image_url>\n")
+		fmt.Printf(usageString)
 		os.Exit(2)
 	}
 
-	fmt.Printf("ARGS URL : %s\n", flag.Arg(1))
 	_, errUrl := url.ParseRequestURI(imageURL) // check if the URL respect HTTP URL format
 	if errUrl != nil {
 		fmt.Printf("Error: invalid URL\n")
-		fmt.Printf("Usage: go run client.go [-D=destination_path] [-A=algorithm] [-S=threshold_value] <server_portnumber> <image_url>\n")
+		fmt.Printf(usageString)
 		os.Exit(2)
 	}
 	if threshold != "" {
@@ -50,10 +50,12 @@ func getArgs() (int, string, string, string, string) {
 		if errThreshold != nil || thresholdFloat < 0 || thresholdFloat > 1 { //Check if the threshold value is a number between 0 and 1
 			fmt.Printf("Error: incorrect threshold value\n")
 			fmt.Printf("Please enter a threshold value between 0 and 1\n")
-			fmt.Printf("Usage: go run client.go [-D=destination_path] [-A=algorithm] [-S=threshold_value] <server_portnumber> <image_url>\n")
+			fmt.Printf(usageString)
 			os.Exit(2)
 		}
 	}
+	fmt.Printf("ARG portNumber : %s\n", flag.Arg(0))
+	fmt.Printf("ARG URL : %s\n", flag.Arg(1))
 	fmt.Printf("ARG DestinationPath : %s\n", destinationPath)
 	fmt.Printf("ARG Algorithme : %s\n", alg)
 	fmt.Printf("ARG thresholdValue : %s\n", threshold)

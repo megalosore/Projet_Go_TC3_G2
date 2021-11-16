@@ -21,26 +21,21 @@ import (
 var nbRoutine int
 
 func getArgs() int {
+	usageString := "Usage: go run server.go [-C=NumberRoutine] <portnumber>\n"
 
-	flagNbroutine := flag.Int("C", runtime.NumCPU(), "Number of go routine per client") //Mise en place des flags pour préciser les arguments optionnels
+	flagNbroutine := flag.Int("C", runtime.NumCPU(), "Number of go routine per client")
 	flag.Parse()
-	var errNbRoutine error
 	nbRoutine = *flagNbroutine
 
-	if errNbRoutine != nil {
-		fmt.Printf("ERROR: Invalid -C flag argument please provide an integer\n")
-		os.Exit(2)
-	}
-
 	if len(flag.Args()) != 1 {
-		fmt.Printf("Usage: go run server.go [-C=NumberRoutine] <portnumber>\n")
+		fmt.Printf(usageString)
 		os.Exit(1)
 
 	} else {
 		fmt.Printf("ARG Port Number : %s\n", flag.Arg(0))
 		portNumber, err := strconv.Atoi(flag.Arg(0))
 		if err != nil {
-			fmt.Printf("Usage: go run server.go <portnumber>\n")
+			fmt.Printf(usageString)
 			os.Exit(1)
 		} else {
 			return portNumber
