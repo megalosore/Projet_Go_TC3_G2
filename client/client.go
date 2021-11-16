@@ -54,11 +54,11 @@ func getArgs() (int, string, string, string, string) {
 			os.Exit(2)
 		}
 	}
-	fmt.Printf("ARG portNumber : %s\n", flag.Arg(0))
-	fmt.Printf("ARG URL : %s\n", flag.Arg(1))
-	fmt.Printf("ARG DestinationPath : %s\n", destinationPath)
-	fmt.Printf("ARG Algorithme : %s\n", alg)
-	fmt.Printf("ARG thresholdValue : %s\n", threshold)
+	fmt.Printf("#DEBUG ARG portNumber : %s\n", flag.Arg(0))
+	fmt.Printf("#DEBUG ARG URL : %s\n", flag.Arg(1))
+	fmt.Printf("#DEBUG ARG DestinationPath : %s\n", destinationPath)
+	fmt.Printf("#DEBUG ARG Algorithme : %s\n", alg)
+	fmt.Printf("#DEBUG ARG thresholdValue : %s\n", threshold)
 	return portNumber, imageURL, destinationPath, alg, threshold
 }
 
@@ -98,7 +98,7 @@ func main() {
 	destinationPath = generateImgPath(destinationPath)
 	sendValue := imageURL + "\\" + alg + "\\" + threshold + "\n"
 
-	fmt.Printf("Dialing TCP Server on port %d\n", portNumber)
+	fmt.Printf("#DEBUG Dialing TCP Server on port %d\n", portNumber)
 	portString := fmt.Sprintf("127.0.0.1:%s", strconv.Itoa(portNumber))
 	conn, err := net.Dial("tcp", portString)
 
