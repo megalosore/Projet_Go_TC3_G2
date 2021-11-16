@@ -149,7 +149,7 @@ func handleConnection(connection net.Conn, connum int) {
 			nbReceived++
 		}
 		elapsed := time.Since(start)
-		fmt.Printf("Convolution time: %s\n", elapsed)
+		fmt.Printf("Computation time: %s\n", elapsed)
 
 		outputImg := sliceToImg(outputSlice)
 		encoder := gob.NewEncoder(connection)

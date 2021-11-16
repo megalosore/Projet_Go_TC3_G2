@@ -93,7 +93,7 @@ func worker() {
 
 func launchWorkers() {
 	for i := 0; i < routineNb; i++ {
-		worker()
+		go worker()
 	}
 }
 
