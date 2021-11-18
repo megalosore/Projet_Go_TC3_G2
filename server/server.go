@@ -21,12 +21,13 @@ import (
 var routineNb int
 var inputChannel chan *toCompute
 
-func getArgs() (int, bool, int) {
-	usageString := "Usage: go run server.go [-B] [-I=IterationNumber] [-C=NumberRoutine] <portnumber>\n"
+func getArgs() (int, bool, int, bool) {
+	usageString := "Usage: go run server.go [-B] [-D] [-I=IterationNumber] [-C=NumberRoutine] <portnumber>\n"
 
 	flagBenchmark := flag.Bool("B", false, "Activate benchmark mode")
 	flagIterationNb := flag.Int("I", 1, "In combination with benchmark mode, determine the number of iterations for averaging.")
 	flagNbroutine := flag.Int("C", runtime.NumCPU(), "Number of go routine per client")
+	flagComplexity := flag.Bool("D", false, "Activate complexity_benchmark mode")
 	flag.Parse()
 	routineNb = *flagNbroutine
 
@@ -50,11 +51,16 @@ func getArgs() (int, bool, int) {
 
 	fmt.Printf("#DEBUG ARG port number: %s\n", flag.Arg(0))
 	fmt.Printf("#DEBUG ARG number of routines: %d\n", *flagNbroutine)
+
+	if *flagComplexity {
+		fmt.Printf("#DEBUG ARG complexity_benchmark activated\n")
+	}
+
 	if *flagBenchmark {
 		fmt.Printf("#DEBUG ARG benchmark activated\n")
 		fmt.Printf("#DEBUG ARG iteration number: %d\n", *flagIterationNb)
 	}
-	return portNumber, *flagBenchmark, *flagIterationNb
+	return portNumber, *flagBenchmark, *flagIterationNb, *flagComplexity
 }
 
 func handleConnection(connection net.Conn, connum int, benchmark bool, iterationNb int) {
@@ -225,7 +231,16 @@ func loadImgFromURL(url string) (image.Image, error) {
 }
 
 func main() {
-	port, benchmark, iterationNb := getArgs()
+	port, benchmark, iterationNb, complexity := getArgs()
+
+	if complexity {
+		print("#DEBUG Starting complexity computation\n")
+		inputChannel = make(chan *toCompute)
+		complexity_benchmark()
+		print("#DEBUG complexity computation has finished closing the server now\n")
+		os.Exit(1)
+	}
+
 	fmt.Printf("#DEBUG Creating TCP Server on port %d\n", port)
 	portString := fmt.Sprintf(":%s", strconv.Itoa(port))
 
