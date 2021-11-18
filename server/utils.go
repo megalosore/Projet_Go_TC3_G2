@@ -123,7 +123,7 @@ func traceBenchmark(routineNumbers []int, times []float64) {
 	page.Render(io.MultiWriter(f))
 }
 
-func complexity_benchmark() {
+func complexityBenchmark() {
 	fmt.Printf("Starting benchmark\n")
 	var imgSize []int
 	// On détermine ici le nombre et l'abscisse des points

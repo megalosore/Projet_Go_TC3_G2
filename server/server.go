@@ -236,8 +236,8 @@ func main() {
 	if complexity {
 		print("#DEBUG Starting complexity computation\n")
 		inputChannel = make(chan *toCompute)
-		complexity_benchmark()
-		print("#DEBUG complexity computation has finished, closing server now\n")
+		complexityBenchmark()
+		print("#DEBUG Complexity computation has finished, closing server now\n")
 		os.Exit(1)
 	}
 
