@@ -1,8 +1,16 @@
 package main
 
 import (
+	"fmt"
+	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/components"
+	"github.com/go-echarts/go-echarts/v2/opts"
 	"image"
 	"image/color"
+	"io"
+	"io/ioutil"
+	"os"
+	"strconv"
 )
 
 //Fonctions utilisés dans les convolutions et le serveur
@@ -19,30 +27,30 @@ func sum2D(kernel [][]int16) int16 {
 }
 
 // Récupérer un carré de l'image originale centré en x,y et de dimension size*size
-func crop(imgAgrandie [][]int16, x int, y int, size int) [][]int16 {
-	imgResult := slice2D(size, size)
+func crop(inputSlice [][]int16, x int, y int, size int) [][]int16 {
+	outputSlice := slice2D(size, size)
 
 	// On remplit le carré par les valeurs correspondantes
 	for ligne := 0; ligne < size; ligne++ {
 		for colonne := 0; colonne < size; colonne++ {
-			imgResult[ligne][colonne] = imgAgrandie[y+ligne][x+colonne]
+			outputSlice[ligne][colonne] = inputSlice[y-1+ligne][x-1+colonne]
 		}
 	}
-	return imgResult
+	return outputSlice
 }
 
 // Crée une version entourée de 0 de l'image originale pour traiter les cas des x,y en bordure
-func agrandie(image [][]int16) [][]int16 {
-	newImage := slice2D(len(image)+2, len(image[0])+2)
+func fillBorders(slice [][]int16) [][]int16 {
+	newImage := slice2D(len(slice)+2, len(slice[0])+2)
 	for i := 1; i < len(newImage)-1; i++ {
 		for j := 1; j < len(newImage[0])-1; j++ {
-			newImage[i][j] = image[i-1][j-1]
+			newImage[i][j] = slice[i-1][j-1]
 		}
 	}
 	return newImage
 }
 
-// Crée un double slice de dimension précisée (y=ligne , x=colonne) rempli de 0
+// Crée un double slice de dimension précisée (y=ligne, x=colonne) rempli de 0
 func slice2D(lenY int, lenX int) [][]int16 {
 	doubleSlice := make([][]int16, lenY)
 	for i := range doubleSlice {
@@ -51,7 +59,7 @@ func slice2D(lenY int, lenX int) [][]int16 {
 	return doubleSlice
 }
 
-// Convertit une slice 2D en une image en nuances de gris
+// Convertit un slice 2D en une image en nuances de gris
 func sliceToImg(slice [][]int16) *image.Gray {
 	img := image.NewGray(image.Rect(0, 0, len(slice[0]), len(slice)))
 
@@ -77,4 +85,38 @@ func imgToSlice(image image.Image) [][]int16 {
 		}
 	}
 	return returnImg
+}
+
+func traceBenchmark(routineNumbers []int, times []float64) {
+	items := make([]opts.LineData, 0)
+	for i := 0; i < len(times); i++ {
+		items = append(items, opts.LineData{Value: times[i], Symbol: "circle", SymbolSize: 5})
+	}
+	line := charts.NewLine()
+	line.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: "Image convolution benchmark"}),
+	)
+	line.SetXAxis(routineNumbers).AddSeries("", items)
+	line.XAxisList[0].Scale = true
+	line.YAxisList[0].Scale = true
+	page := components.NewPage()
+	page.AddCharts(line)
+
+	// On crée un répertoire pour enregistrer les benchmarks s'il n'existe pas déjà
+	if _, err := os.Stat("benchmark_results/"); os.IsNotExist(err) {
+		err = os.Mkdir("benchmark_results", 0755)
+		if err != nil {
+			fmt.Printf("Error while creating benchmark directory: check the permissions of the current directory.\n")
+		}
+	}
+	// On enregistre le benchmark sans écraser les résultats précédents
+	files, _ := ioutil.ReadDir("benchmark_results/")
+	filePath := "benchmark_results/benchmark_" + strconv.Itoa(len(files)+1) + ".html"
+	f, err := os.Create(filePath)
+	if err != nil {
+		fmt.Printf("Error while saving benchmark.\n")
+	} else {
+		fmt.Printf("Benchmark result successfully saved at \"%s\".\n", filePath)
+	}
+	page.Render(io.MultiWriter(f))
 }

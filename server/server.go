@@ -18,41 +18,54 @@ import (
 	"time"
 )
 
-var nbRoutine int
+var routineNb int
+var inputChannel chan *toCompute
 
-func getArgs() int {
-	usageString := "Usage: go run server.go [-C=NumberRoutine] <portnumber>\n"
+func getArgs() (int, bool, int) {
+	usageString := "Usage: go run server.go [-B] [-I=IterationNumber] [-C=NumberRoutine] <portnumber>\n"
 
+	flagBenchmark := flag.Bool("B", false, "Activate benchmark mode")
+	flagIterationNb := flag.Int("I", 1, "In combination with benchmark mode, determine the number of iterations for averaging.")
 	flagNbroutine := flag.Int("C", runtime.NumCPU(), "Number of go routine per client")
 	flag.Parse()
-	nbRoutine = *flagNbroutine
+	routineNb = *flagNbroutine
 
 	if len(flag.Args()) != 1 {
 		fmt.Printf(usageString)
-		os.Exit(1)
-
-	} else {
-		fmt.Printf("ARG Port Number : %s\n", flag.Arg(0))
-		portNumber, err := strconv.Atoi(flag.Arg(0))
-		if err != nil {
-			fmt.Printf(usageString)
-			os.Exit(1)
-		} else {
-			return portNumber
-		}
+		os.Exit(2)
 	}
-	return -1
+
+	portNumber, err := strconv.Atoi(flag.Arg(0))
+	if err != nil {
+		fmt.Printf("Error: Incorrect port number.\n")
+		fmt.Printf(usageString)
+		os.Exit(2)
+	}
+
+	if *flagIterationNb < 1 {
+		fmt.Printf("Error: Incorrect iteration number.\n")
+		fmt.Printf(usageString)
+		os.Exit(2)
+	}
+
+	fmt.Printf("#DEBUG ARG port number: %s\n", flag.Arg(0))
+	fmt.Printf("#DEBUG ARG number of routines: %d\n", *flagNbroutine)
+	if *flagBenchmark {
+		fmt.Printf("#DEBUG ARG benchmark activated\n")
+		fmt.Printf("#DEBUG ARG iteration number: %d\n", *flagIterationNb)
+	}
+	return portNumber, *flagBenchmark, *flagIterationNb
 }
 
-func handleConnection(connection net.Conn, connum int) {
+func handleConnection(connection net.Conn, connum int, benchmark bool, iterationNb int) {
 	defer connection.Close()
 	connReader := bufio.NewReader(connection)
 
 	for {
 		inputLine, err := connReader.ReadString('\n')
 		if err != nil {
-			fmt.Printf("%d RCV ERROR no panic, just a client\n", connum)
-			fmt.Printf("Error :|%s|\n", err.Error())
+			fmt.Printf("Connection %d encountered an error.\n", connum)
+			fmt.Printf("Error: %s\n", err.Error())
 			break
 		}
 
@@ -62,27 +75,33 @@ func handleConnection(connection net.Conn, connum int) {
 		kernelType := argsList[1]
 		thresholdValue := argsList[2]
 
-		fmt.Printf("%d RCV |%s| |%s| |%s|\n", connum, url, kernelType, thresholdValue)
+		fmt.Printf("#DEBUG Connection %d Args: url=%s, alg=%s threshold=%s\n", connum, url, kernelType, thresholdValue)
 
 		img, err := loadImgFromURL(url)
 		if err != nil {
-			fmt.Printf("%d RCV ERROR no panic, just a client\n", connum)
-			fmt.Printf("Error :|%s|\n", err.Error())
+			fmt.Printf("Connection %d encountered an error.\n", connum)
+			fmt.Printf("Error: %s\n", err.Error())
 			break
 		}
 
-		var final [][]int16   // On initialise la valeur qui reçoit le resultat de nos calculs
-		var threshold float64 // On initialise la valeur qui recevra le seuil précisé ou non par le client
+		inputSlice := imgToSlice(img)
+		outputSlice := slice2D(len(inputSlice), len(inputSlice[0]))
+		var threshold float64
+		var kernel1 [][]int16
+		var kernel2 [][]int16
+		doubleKernel := false
+		outputChannel := make(chan bool)
 
-		start := time.Now()
+		// choix du/des kernels à utiliser
 		switch kernelType {
-		case "sobel": // Si le client spécifie le filtre de sobel on l'utilise
-			kernel1 := [][]int16{
+		case "sobel":
+			doubleKernel = true
+			kernel1 = [][]int16{
 				{-1, 0, 1},
 				{-2, 0, 2},
 				{-1, 0, 1},
 			}
-			kernel2 := [][]int16{
+			kernel2 = [][]int16{
 				{-1, -2, -1},
 				{0, 0, 0},
 				{1, 2, 1},
@@ -95,16 +114,15 @@ func handleConnection(connection net.Conn, connum int) {
 			} else {
 				threshold = 0.1 // Default threshold value for Sobel
 			}
-			imgConverted := imgToSlice(img)
-			final = convoluteDouble(imgConverted, kernel1, kernel2, threshold)
 
-		case "prewit": // Si le client spécifie le filtre de prewit on l'utilise
-			kernel1 := [][]int16{
+		case "prewit":
+			doubleKernel = true
+			kernel1 = [][]int16{
 				{-1, 0, 1},
 				{-1, 0, 1},
 				{-1, 0, 1},
 			}
-			kernel2 := [][]int16{
+			kernel2 = [][]int16{
 				{-1, -1, -1},
 				{0, 0, 0},
 				{1, 1, 1},
@@ -117,16 +135,15 @@ func handleConnection(connection net.Conn, connum int) {
 			} else {
 				threshold = 0.07 // Default threshold value for Prewit
 			}
-			imgConverted := imgToSlice(img)
-			final = convoluteDouble(imgConverted, kernel1, kernel2, threshold)
 
 		default:
 			// On utilise le Laplacien par défaut sinon
-			kernel := [][]int16{
+			kernel1 = [][]int16{
 				{0, -1, 0},
 				{-1, 4, -1},
 				{0, -1, 0},
 			}
+			kernel2 = nil
 			if thresholdValue != "" {
 				threshold, err = strconv.ParseFloat(thresholdValue, 8)
 				if err != nil {
@@ -135,15 +152,61 @@ func handleConnection(connection net.Conn, connum int) {
 			} else {
 				threshold = 0.3 // Default threshold value for Laplacian
 			}
-			imgConverted := imgToSlice(img)
-			final = convolute(imgConverted, kernel, threshold)
 		}
 
-		finalImage := sliceToImg(final)
-		elapsed := time.Since(start)
-		fmt.Printf("Temps : %s\n", elapsed)
+		if !benchmark {
+			start := time.Now()
+			inputs := generateInputs(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
+			go feedInput(inputs)
+			nbReceived := 0
+			for nbReceived < len(inputs) {
+				_ = <-outputChannel
+				nbReceived++
+			}
+			elapsed := time.Since(start)
+			fmt.Printf("Computation finished.\n")
+			fmt.Printf("Computation time: %s\n", elapsed)
+		} else {
+			fmt.Printf("Starting benchmark\n")
+			var routineNumbers []int
+			// On détermine ici le nombre et l'abscisse des points
+			for i := 1; i < 30; i++ {
+				routineNumbers = append(routineNumbers, i)
+			}
+
+			// On effectue plusieurs fois la mesure du temps pour chaque valeur d'abscisse, si activé, pour moyenner le résultat
+			times := make([]float64, len(routineNumbers))
+			for i := 0; i < iterationNb; i++ {
+				fmt.Printf("#DEBUG Iteration %d/%d\n", i+1, iterationNb)
+				for j, r := range routineNumbers {
+					fmt.Printf("#DEBUG Computation %d/%d\n", j+1, len(routineNumbers))
+					killWorkers(routineNb)
+					routineNb = r
+					launchWorkers()
+
+					start := time.Now()
+					inputs := generateInputs(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
+					go feedInput(inputs)
+					nbReceived := 0
+					for nbReceived < len(inputs) {
+						_ = <-outputChannel
+						nbReceived++
+					}
+					elapsed := time.Since(start)
+					times[j] += float64(elapsed.Milliseconds())
+				}
+			}
+			// On moyenne les résultats
+			for i := range times {
+				times[i] /= float64(iterationNb)
+			}
+			fmt.Printf("Benchmark finished.\n")
+			traceBenchmark(routineNumbers, times)
+		}
+
+		outputImg := sliceToImg(outputSlice)
 		encoder := gob.NewEncoder(connection)
-		encoder.Encode(finalImage)
+		encoder.Encode(outputImg)
 		break
 	}
 }
@@ -162,10 +225,9 @@ func loadImgFromURL(url string) (image.Image, error) {
 }
 
 func main() {
-	port := getArgs()
-	fmt.Printf("Creating TCP Server on port %d\n", port)
+	port, benchmark, iterationNb := getArgs()
+	fmt.Printf("#DEBUG Creating TCP Server on port %d\n", port)
 	portString := fmt.Sprintf(":%s", strconv.Itoa(port))
-	fmt.Printf("Number of go routines: %d\n", nbRoutine)
 
 	ln, err := net.Listen("tcp", portString)
 	if err != nil {
@@ -173,18 +235,20 @@ func main() {
 		panic(err)
 	}
 
+	inputChannel = make(chan *toCompute)
+	launchWorkers()
 	connum := 1
 
 	for {
-		fmt.Printf("Accepting next connection\n")
+		fmt.Printf("#DEBUG Accepting next connection\n")
 		conn, errconn := ln.Accept()
 
 		if errconn != nil {
-			fmt.Printf("Error when accepting next connection\n")
+			fmt.Printf("Error when accepting next connection.\n")
 			panic(errconn)
 		}
 
-		go handleConnection(conn, connum)
+		go handleConnection(conn, connum, benchmark, iterationNb)
 		connum += 1
 	}
 }
