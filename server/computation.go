@@ -116,7 +116,7 @@ func killWorkers(nbToKill int) {
 	}
 }
 
-func feedInput(inputSlice [][]int16, outputSlice [][]int16, doubleKernel bool, kernel1 [][]int16, kernel2 [][]int16, threshold float64, outputChannel chan bool) int {
+func generateInputs(inputSlice [][]int16, outputSlice [][]int16, doubleKernel bool, kernel1 [][]int16, kernel2 [][]int16, threshold float64, outputChannel chan bool) []*toCompute {
 	lenY := len(inputSlice)
 	lenX := len(inputSlice[0])
 
@@ -132,6 +132,7 @@ func feedInput(inputSlice [][]int16, outputSlice [][]int16, doubleKernel bool, k
 		toAdd = int(math.Round((q - float64(lineNb)) * float64(routineNb)))
 	}
 
+	var inputs []*toCompute
 	var n int
 	chunkNumber := 0
 	for i := 0; i < lenY; i += lineNb {
@@ -141,9 +142,15 @@ func feedInput(inputSlice [][]int16, outputSlice [][]int16, doubleKernel bool, k
 			i++
 			toAdd--
 		}
-		inputChannel <- &toCompute{enlargedSlice: enlargedSlice, outputSlice: outputSlice, lenX: lenX, doubleKernel: doubleKernel,
-			kernel1: kernel1, kernel2: kernel2, threshold: threshold, startingLine: i, lineNumber: n, outputChannel: outputChannel, killSignal: false}
+		inputs = append(inputs, &toCompute{enlargedSlice, outputSlice, lenX, doubleKernel,
+			kernel1, kernel2, threshold, i, n, outputChannel, false})
 		chunkNumber++
 	}
-	return chunkNumber
+	return inputs
+}
+
+func feedInput(inputs []*toCompute) {
+	for _, input := range inputs {
+		inputChannel <- input
+	}
 }

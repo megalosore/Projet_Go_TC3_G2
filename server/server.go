@@ -156,9 +156,10 @@ func handleConnection(connection net.Conn, connum int, benchmark bool, iteration
 
 		if !benchmark {
 			start := time.Now()
-			chunkNumber := feedInput(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
+			inputs := generateInputs(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
+			go feedInput(inputs)
 			nbReceived := 0
-			for nbReceived < chunkNumber {
+			for nbReceived < len(inputs) {
 				_ = <-outputChannel
 				nbReceived++
 			}
@@ -184,9 +185,10 @@ func handleConnection(connection net.Conn, connum int, benchmark bool, iteration
 					launchWorkers()
 
 					start := time.Now()
-					chunkNumber := feedInput(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
+					inputs := generateInputs(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
+					go feedInput(inputs)
 					nbReceived := 0
-					for nbReceived < chunkNumber {
+					for nbReceived < len(inputs) {
 						_ = <-outputChannel
 						nbReceived++
 					}
