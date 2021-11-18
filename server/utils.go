@@ -2,15 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-echarts/go-echarts/v2/charts"
-	"github.com/go-echarts/go-echarts/v2/components"
-	"github.com/go-echarts/go-echarts/v2/opts"
 	"image"
 	"image/color"
 	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
+	"time"
+
+	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/components"
+	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
 //Fonctions utilisés dans les convolutions et le serveur
@@ -119,4 +121,32 @@ func traceBenchmark(routineNumbers []int, times []float64) {
 		fmt.Printf("Benchmark result successfully saved at \"%s\".\n", filePath)
 	}
 	page.Render(io.MultiWriter(f))
+}
+
+func complexityBenchmark() {
+	fmt.Printf("Starting benchmark\n")
+	var imgSize []int
+	// On détermine ici le nombre et l'abscisse des points
+	for i := 10; i <= 10000; i += 10 {
+		imgSize = append(imgSize, i)
+	}
+	times := make([]float64, len(imgSize))
+	outputChannel := make(chan bool)
+	launchWorkers()
+
+	for j := range imgSize {
+		fmt.Printf("Computation %d/%d\n", j, len(imgSize))
+		start := time.Now()
+		inputs := generateInputs(slice2D(imgSize[j], imgSize[j]), slice2D(imgSize[j], imgSize[j]), true, slice2D(3, 3), slice2D(3, 3), 0.5, outputChannel)
+		go feedInput(inputs)
+		nbReceived := 0
+		for nbReceived < len(inputs) {
+			_ = <-outputChannel
+			nbReceived++
+		}
+		elapsed := time.Since(start)
+		times[j] = float64(elapsed.Milliseconds())
+	}
+	fmt.Printf("Benchmark finished.\n")
+	traceBenchmark(imgSize, times)
 }
