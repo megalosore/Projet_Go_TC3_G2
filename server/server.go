@@ -21,33 +21,43 @@ import (
 var routineNb int
 var inputChannel chan *toCompute
 
-func getArgs() (int, bool, bool) {
-	usageString := "Usage: go run server.go [-B] [-C=NumberRoutine] <portnumber>\n"
+func getArgs() (int, bool, int) {
+	usageString := "Usage: go run server.go [-B] [-I=IterationNumber] [-C=NumberRoutine] <portnumber>\n"
 
 	flagBenchmark := flag.Bool("B", false, "Activate benchmark mode")
-	flagMean := flag.Bool("M", false, "In combination with benchmark mode, activate the averaging.")
+	flagIterationNb := flag.Int("I", 1, "In combination with benchmark mode, determine the number of iterations for averaging.")
 	flagNbroutine := flag.Int("C", runtime.NumCPU(), "Number of go routine per client")
 	flag.Parse()
 	routineNb = *flagNbroutine
 
 	if len(flag.Args()) != 1 {
 		fmt.Printf(usageString)
-		os.Exit(1)
-
-	} else {
-		fmt.Printf("#DEBUG Arg Port Number : %s\n", flag.Arg(0))
-		portNumber, err := strconv.Atoi(flag.Arg(0))
-		if err != nil {
-			fmt.Printf(usageString)
-			os.Exit(1)
-		} else {
-			return portNumber, *flagBenchmark, *flagMean
-		}
+		os.Exit(2)
 	}
-	return -1, false, false
+
+	portNumber, err := strconv.Atoi(flag.Arg(0))
+	if err != nil {
+		fmt.Printf("Error: Incorrect port number.\n")
+		fmt.Printf(usageString)
+		os.Exit(2)
+	}
+
+	if *flagIterationNb < 1 {
+		fmt.Printf("Error: Incorrect iteration number.\n")
+		fmt.Printf(usageString)
+		os.Exit(2)
+	}
+
+	fmt.Printf("#DEBUG ARG port number: %s\n", flag.Arg(0))
+	fmt.Printf("#DEBUG ARG number of routines: %d\n", *flagNbroutine)
+	if *flagBenchmark {
+		fmt.Printf("#DEBUG ARG benchmark activated\n")
+		fmt.Printf("#DEBUG ARG iteration number: %d\n", *flagIterationNb)
+	}
+	return portNumber, *flagBenchmark, *flagIterationNb
 }
 
-func handleConnection(connection net.Conn, connum int, benchmark bool, mean bool) {
+func handleConnection(connection net.Conn, connum int, benchmark bool, iterationNb int) {
 	defer connection.Close()
 	connReader := bufio.NewReader(connection)
 
@@ -153,6 +163,7 @@ func handleConnection(connection net.Conn, connum int, benchmark bool, mean bool
 				nbReceived++
 			}
 			elapsed := time.Since(start)
+			fmt.Printf("Computation finished.\n")
 			fmt.Printf("Computation time: %s\n", elapsed)
 		} else {
 			fmt.Printf("Starting benchmark\n")
@@ -162,13 +173,7 @@ func handleConnection(connection net.Conn, connum int, benchmark bool, mean bool
 				routineNumbers = append(routineNumbers, i)
 			}
 
-			// Si le paramètre moyenne est activé, on effectue plusieurs fois la mesure du temps pour chaque valeur d'abscisse
-			var iterationNb int
-			if mean {
-				iterationNb = 100
-			} else {
-				iterationNb = 1
-			}
+			// On effectue plusieurs fois la mesure du temps pour chaque valeur d'abscisse, si activé, pour moyenner le résultat
 			times := make([]float64, len(routineNumbers))
 			for i := 0; i < iterationNb; i++ {
 				fmt.Printf("#DEBUG Iteration %d/%d\n", i+1, iterationNb)
@@ -218,10 +223,9 @@ func loadImgFromURL(url string) (image.Image, error) {
 }
 
 func main() {
-	port, benchmark, mean := getArgs()
+	port, benchmark, iterationNb := getArgs()
 	fmt.Printf("#DEBUG Creating TCP Server on port %d\n", port)
 	portString := fmt.Sprintf(":%s", strconv.Itoa(port))
-	fmt.Printf("#DEBUG Number of go routines: %d\n", routineNb)
 
 	ln, err := net.Listen("tcp", portString)
 	if err != nil {
@@ -242,7 +246,7 @@ func main() {
 			panic(errconn)
 		}
 
-		go handleConnection(conn, connum, benchmark, mean)
+		go handleConnection(conn, connum, benchmark, iterationNb)
 		connum += 1
 	}
 }
