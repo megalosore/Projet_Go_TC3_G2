@@ -1,8 +1,13 @@
 package main
 
 import (
+	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/components"
+	"github.com/go-echarts/go-echarts/v2/opts"
 	"image"
 	"image/color"
+	"io"
+	"os"
 )
 
 //Fonctions utilisés dans les convolutions et le serveur
@@ -77,4 +82,23 @@ func imgToSlice(image image.Image) [][]int16 {
 		}
 	}
 	return returnImg
+}
+
+func traceBenchmark(routineNumbers []int, times []float64) {
+	items := make([]opts.LineData, 0)
+	for i := 0; i < len(times); i++ {
+		items = append(items, opts.LineData{Value: times[i], Symbol: "circle", SymbolSize: 5})
+	}
+	line := charts.NewLine()
+	line.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: "Image convolution benchmark"}),
+	)
+	line.SetXAxis(routineNumbers).AddSeries("", items)
+	page := components.NewPage()
+	page.AddCharts(line)
+	f, err := os.Create("benchmark.html")
+	if err != nil {
+		panic(err)
+	}
+	page.Render(io.MultiWriter(f))
 }

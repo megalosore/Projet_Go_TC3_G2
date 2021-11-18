@@ -21,9 +21,10 @@ import (
 var routineNb int
 var inputChannel chan *toCompute
 
-func getArgs() int {
-	usageString := "Usage: go run server.go [-C=NumberRoutine] <portnumber>\n"
+func getArgs() (int, bool) {
+	usageString := "Usage: go run server.go [-B] [-C=NumberRoutine] <portnumber>\n"
 
+	flagBenchmark := flag.Bool("B", false, "Activate benchmark mode")
 	flagNbroutine := flag.Int("C", runtime.NumCPU(), "Number of go routine per client")
 	flag.Parse()
 	routineNb = *flagNbroutine
@@ -39,13 +40,13 @@ func getArgs() int {
 			fmt.Printf(usageString)
 			os.Exit(1)
 		} else {
-			return portNumber
+			return portNumber, *flagBenchmark
 		}
 	}
-	return -1
+	return -1, false
 }
 
-func handleConnection(connection net.Conn, connum int) {
+func handleConnection(connection net.Conn, connum int, benchmark bool) {
 	defer connection.Close()
 	connReader := bufio.NewReader(connection)
 
@@ -141,15 +142,43 @@ func handleConnection(connection net.Conn, connum int) {
 				threshold = 0.3 // Default threshold value for Laplacian
 			}
 		}
-		start := time.Now()
-		feedInput(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
-		nbReceived := 0
-		for nbReceived < routineNb {
-			_ = <-outputChannel
-			nbReceived++
+
+		if !benchmark {
+			start := time.Now()
+			chunkNumber := feedInput(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
+			nbReceived := 0
+			for nbReceived < chunkNumber {
+				_ = <-outputChannel
+				nbReceived++
+			}
+			elapsed := time.Since(start)
+			fmt.Printf("Computation time: %s\n", elapsed)
+		} else {
+			fmt.Printf("Starting benchmark\n")
+			var routineNumbers []int
+			for i := 1; i < 100; i++ {
+				routineNumbers = append(routineNumbers, i)
+			}
+			var times []float64
+			for i, r := range routineNumbers {
+				fmt.Printf("#DEBUG computation %d/%d\n", i+1, len(routineNumbers))
+				killWorkers(routineNb)
+				routineNb = r
+				launchWorkers()
+
+				start := time.Now()
+				chunkNumber := feedInput(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
+				nbReceived := 0
+				for nbReceived < chunkNumber {
+					_ = <-outputChannel
+					nbReceived++
+				}
+				elapsed := time.Since(start)
+				times = append(times, float64(elapsed.Milliseconds()))
+			}
+			fmt.Printf("Benchmark finished.\n")
+			traceBenchmark(routineNumbers, times)
 		}
-		elapsed := time.Since(start)
-		fmt.Printf("Computation time: %s\n", elapsed)
 
 		outputImg := sliceToImg(outputSlice)
 		encoder := gob.NewEncoder(connection)
@@ -172,7 +201,7 @@ func loadImgFromURL(url string) (image.Image, error) {
 }
 
 func main() {
-	port := getArgs()
+	port, benchmark := getArgs()
 	fmt.Printf("#DEBUG Creating TCP Server on port %d\n", port)
 	portString := fmt.Sprintf(":%s", strconv.Itoa(port))
 	fmt.Printf("#DEBUG Number of go routines: %d\n", routineNb)
@@ -196,7 +225,7 @@ func main() {
 			panic(errconn)
 		}
 
-		go handleConnection(conn, connum)
+		go handleConnection(conn, connum, benchmark)
 		connum += 1
 	}
 }

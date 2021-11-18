@@ -15,6 +15,7 @@ type toCompute struct {
 	startingLine  int
 	lineNumber    int
 	outputChannel chan bool
+	killSignal    bool
 }
 
 // Effectue la convolution pour 1 pixel avec un seul kernel
@@ -78,6 +79,11 @@ func worker() {
 	for {
 		input := <-inputChannel
 
+		if input.killSignal {
+			input.outputChannel <- true
+			break
+		}
+
 		for i := input.startingLine; i < input.startingLine+input.lineNumber; i++ {
 			for j := 0; j < input.lenX; j++ {
 				if input.doubleKernel {
@@ -97,24 +103,46 @@ func launchWorkers() {
 	}
 }
 
-func feedInput(inputSlice [][]int16, outputSlice [][]int16, doubleKernel bool, kernel1 [][]int16, kernel2 [][]int16, threshold float64, outputChannel chan bool) {
+func killWorkers(nbToKill int) {
+	outputChannel := make(chan bool)
+	for i := 0; i < nbToKill; i++ {
+		inputChannel <- &toCompute{killSignal: true, outputChannel: outputChannel}
+	}
+	nbReceived := 0
+	for nbReceived < nbToKill {
+		_ = <-outputChannel
+		nbReceived++
+	}
+}
+
+func feedInput(inputSlice [][]int16, outputSlice [][]int16, doubleKernel bool, kernel1 [][]int16, kernel2 [][]int16, threshold float64, outputChannel chan bool) int {
 	lenY := len(inputSlice)
 	lenX := len(inputSlice[0])
 
 	// On traite l'image pour rajouter des 0 sur les bordures
 	enlargedSlice := fillBorders(inputSlice)
 
-	// On rajoute 1 pour éviter les cas ou lineNb est arrondi à l'inférieur
-	lineNb := (lenY / routineNb) + 1
+	// On découpe l'image en chunks pour correspondre au nombre de goroutines
+	q := float64(lenY) / float64(routineNb)
+	toAdd := 0
+	lineNb := 1
+	if q > 1 {
+		lineNb = int(q)
+		toAdd = int(math.Round((q - float64(lineNb)) * float64(routineNb)))
+	}
 
 	var n int
+	chunkNumber := 0
 	for i := 0; i < lenY; i += lineNb {
-		if i+lineNb > lenY {
-			n = lenY - i
-		} else {
-			n = lineNb
+		n = lineNb
+		if toAdd != 0 {
+			n++
+			i++
+			toAdd--
 		}
 		inputChannel <- &toCompute{enlargedSlice: enlargedSlice, outputSlice: outputSlice, lenX: lenX, doubleKernel: doubleKernel,
-			kernel1: kernel1, kernel2: kernel2, threshold: threshold, startingLine: i, lineNumber: n, outputChannel: outputChannel}
+			kernel1: kernel1, kernel2: kernel2, threshold: threshold, startingLine: i, lineNumber: n, outputChannel: outputChannel, killSignal: false}
+		chunkNumber++
 	}
+	return chunkNumber
 }
