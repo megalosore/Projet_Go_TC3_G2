@@ -21,10 +21,11 @@ import (
 var routineNb int
 var inputChannel chan *toCompute
 
-func getArgs() (int, bool) {
+func getArgs() (int, bool, bool) {
 	usageString := "Usage: go run server.go [-B] [-C=NumberRoutine] <portnumber>\n"
 
 	flagBenchmark := flag.Bool("B", false, "Activate benchmark mode")
+	flagMean := flag.Bool("M", false, "In combination with benchmark mode, activate the averaging.")
 	flagNbroutine := flag.Int("C", runtime.NumCPU(), "Number of go routine per client")
 	flag.Parse()
 	routineNb = *flagNbroutine
@@ -40,13 +41,13 @@ func getArgs() (int, bool) {
 			fmt.Printf(usageString)
 			os.Exit(1)
 		} else {
-			return portNumber, *flagBenchmark
+			return portNumber, *flagBenchmark, *flagMean
 		}
 	}
-	return -1, false
+	return -1, false, false
 }
 
-func handleConnection(connection net.Conn, connum int, benchmark bool) {
+func handleConnection(connection net.Conn, connum int, benchmark bool, mean bool) {
 	defer connection.Close()
 	connReader := bufio.NewReader(connection)
 
@@ -156,25 +157,41 @@ func handleConnection(connection net.Conn, connum int, benchmark bool) {
 		} else {
 			fmt.Printf("Starting benchmark\n")
 			var routineNumbers []int
-			for i := 1; i < 100; i++ {
+			// On détermine ici le nombre et l'abscisse des points
+			for i := 1; i < 30; i++ {
 				routineNumbers = append(routineNumbers, i)
 			}
-			var times []float64
-			for i, r := range routineNumbers {
-				fmt.Printf("#DEBUG computation %d/%d\n", i+1, len(routineNumbers))
-				killWorkers(routineNb)
-				routineNb = r
-				launchWorkers()
 
-				start := time.Now()
-				chunkNumber := feedInput(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
-				nbReceived := 0
-				for nbReceived < chunkNumber {
-					_ = <-outputChannel
-					nbReceived++
+			// Si le paramètre moyenne est activé, on effectue plusieurs fois la mesure du temps pour chaque valeur d'abscisse
+			var iterationNb int
+			if mean {
+				iterationNb = 100
+			} else {
+				iterationNb = 1
+			}
+			times := make([]float64, len(routineNumbers))
+			for i := 0; i < iterationNb; i++ {
+				fmt.Printf("#DEBUG Iteration %d/%d\n", i+1, iterationNb)
+				for j, r := range routineNumbers {
+					fmt.Printf("#DEBUG Computation %d/%d\n", j+1, len(routineNumbers))
+					killWorkers(routineNb)
+					routineNb = r
+					launchWorkers()
+
+					start := time.Now()
+					chunkNumber := feedInput(inputSlice, outputSlice, doubleKernel, kernel1, kernel2, threshold, outputChannel)
+					nbReceived := 0
+					for nbReceived < chunkNumber {
+						_ = <-outputChannel
+						nbReceived++
+					}
+					elapsed := time.Since(start)
+					times[j] += float64(elapsed.Milliseconds())
 				}
-				elapsed := time.Since(start)
-				times = append(times, float64(elapsed.Milliseconds()))
+			}
+			// On moyenne les résultats
+			for i := range times {
+				times[i] /= float64(iterationNb)
 			}
 			fmt.Printf("Benchmark finished.\n")
 			traceBenchmark(routineNumbers, times)
@@ -201,7 +218,7 @@ func loadImgFromURL(url string) (image.Image, error) {
 }
 
 func main() {
-	port, benchmark := getArgs()
+	port, benchmark, mean := getArgs()
 	fmt.Printf("#DEBUG Creating TCP Server on port %d\n", port)
 	portString := fmt.Sprintf(":%s", strconv.Itoa(port))
 	fmt.Printf("#DEBUG Number of go routines: %d\n", routineNb)
@@ -225,7 +242,7 @@ func main() {
 			panic(errconn)
 		}
 
-		go handleConnection(conn, connum, benchmark)
+		go handleConnection(conn, connum, benchmark, mean)
 		connum += 1
 	}
 }

@@ -103,6 +103,7 @@ func launchWorkers() {
 	}
 }
 
+// Envoie un signal d'arrêt aux goroutines et s'assure qu'elles sont bien tuées
 func killWorkers(nbToKill int) {
 	outputChannel := make(chan bool)
 	for i := 0; i < nbToKill; i++ {
