@@ -97,6 +97,8 @@ func traceBenchmark(routineNumbers []int, times []float64) {
 		charts.WithTitleOpts(opts.Title{Title: "Image convolution benchmark"}),
 	)
 	line.SetXAxis(routineNumbers).AddSeries("", items)
+	line.XAxisList[0].Scale = true
+	line.YAxisList[0].Scale = true
 	page := components.NewPage()
 	page.AddCharts(line)
 
