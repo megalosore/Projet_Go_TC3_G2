@@ -89,55 +89,57 @@ func imgToSlice(image image.Image) [][]int16 {
 	return returnImg
 }
 
-func traceBenchmark(routineNumbers []int, times []float64) {
+func traceGraph(graphName string, xData []int, yData []float64, xAxisName string, yAxisName string, baseName string) {
 	items := make([]opts.LineData, 0)
-	for i := 0; i < len(times); i++ {
-		items = append(items, opts.LineData{Value: times[i], Symbol: "circle", SymbolSize: 5})
+	for i := 0; i < len(yData); i++ {
+		items = append(items, opts.LineData{Value: yData[i], Symbol: "circle", SymbolSize: 5})
 	}
 	line := charts.NewLine()
 	line.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{Title: "Image convolution benchmark"}),
+		charts.WithTitleOpts(opts.Title{Title: graphName}),
+		charts.WithYAxisOpts(opts.YAxis{Name: yAxisName, Scale: true}),
+		charts.WithXAxisOpts(opts.XAxis{Name: xAxisName, Scale: true}),
 	)
-	line.SetXAxis(routineNumbers).AddSeries("", items)
-	line.XAxisList[0].Scale = true
-	line.YAxisList[0].Scale = true
+	line.SetXAxis(xData).AddSeries("", items)
+
 	page := components.NewPage()
 	page.AddCharts(line)
 
-	// On crée un répertoire pour enregistrer les benchmarks s'il n'existe pas déjà
-	if _, err := os.Stat("benchmark_results/"); os.IsNotExist(err) {
-		err = os.Mkdir("benchmark_results", 0755)
+	folderName := baseName + "_results"
+	// On crée un répertoire pour enregistrer les graphes s'il n'existe pas déjà
+	if _, err := os.Stat(folderName + "/"); os.IsNotExist(err) {
+		err = os.Mkdir(folderName, 0755)
 		if err != nil {
-			fmt.Printf("Error while creating benchmark directory: check the permissions of the current directory.\n")
+			fmt.Printf("Error while creating %s: check the permissions of the current directory.\n", folderName)
 		}
 	}
-	// On enregistre le benchmark sans écraser les résultats précédents
-	files, _ := ioutil.ReadDir("benchmark_results/")
-	filePath := "benchmark_results/benchmark_" + strconv.Itoa(len(files)+1) + ".html"
+	// On enregistre le graphe sans écraser les résultats précédents
+	files, _ := ioutil.ReadDir(folderName + "/")
+	filePath := folderName + "/" + baseName + "_" + strconv.Itoa(len(files)+1) + ".html"
 	f, err := os.Create(filePath)
 	if err != nil {
-		fmt.Printf("Error while saving benchmark.\n")
+		fmt.Printf("Error while saving graph.\n")
 	} else {
-		fmt.Printf("Benchmark result successfully saved at \"%s\".\n", filePath)
+		fmt.Printf("Graph result successfully saved at \"%s\".\n", filePath)
 	}
 	page.Render(io.MultiWriter(f))
 }
 
 func complexityBenchmark() {
 	fmt.Printf("Starting benchmark\n")
-	var imgSize []int
+	var imgSizes []int
 	// On détermine ici le nombre et l'abscisse des points
 	for i := 10; i <= 10000; i += 10 {
-		imgSize = append(imgSize, i)
+		imgSizes = append(imgSizes, i)
 	}
-	times := make([]float64, len(imgSize))
+	times := make([]float64, len(imgSizes))
 	outputChannel := make(chan bool)
 	launchWorkers()
 
-	for j := range imgSize {
-		fmt.Printf("Computation %d/%d\n", j, len(imgSize))
+	for j := range imgSizes {
+		fmt.Printf("Computation %d/%d\n", j+1, len(imgSizes))
 		start := time.Now()
-		inputs := generateInputs(slice2D(imgSize[j], imgSize[j]), slice2D(imgSize[j], imgSize[j]), true, slice2D(3, 3), slice2D(3, 3), 0.5, outputChannel)
+		inputs := generateInputs(slice2D(imgSizes[j], imgSizes[j]), slice2D(imgSizes[j], imgSizes[j]), true, slice2D(3, 3), slice2D(3, 3), 0.5, outputChannel)
 		go feedInput(inputs)
 		nbReceived := 0
 		for nbReceived < len(inputs) {
@@ -148,5 +150,5 @@ func complexityBenchmark() {
 		times[j] = float64(elapsed.Milliseconds())
 	}
 	fmt.Printf("Benchmark finished.\n")
-	traceBenchmark(imgSize, times)
+	traceGraph("Complexité en temps", imgSizes, times, "Taille image", "Temps (ms)", "complexity_benchmark")
 }

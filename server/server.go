@@ -176,7 +176,7 @@ func handleConnection(connection net.Conn, connum int, benchmark bool, iteration
 			fmt.Printf("Starting benchmark\n")
 			var routineNumbers []int
 			// On détermine ici le nombre et l'abscisse des points
-			for i := 1; i < len(inputSlice); i += 10 {
+			for i := 1; i < len(inputSlice); i += 100 {
 				routineNumbers = append(routineNumbers, i)
 			}
 
@@ -207,7 +207,7 @@ func handleConnection(connection net.Conn, connum int, benchmark bool, iteration
 				times[i] /= float64(iterationNb)
 			}
 			fmt.Printf("Benchmark finished.\n")
-			traceBenchmark(routineNumbers, times)
+			traceGraph("Temps en fonction du nombre de goroutines", routineNumbers, times, "Goroutines", "Temps (ms)", "goroutines_benchmark")
 		}
 
 		outputImg := sliceToImg(outputSlice)
