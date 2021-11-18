@@ -89,6 +89,7 @@ func imgToSlice(image image.Image) [][]int16 {
 	return returnImg
 }
 
+// Trace un graphe et l'enregistre dans un répertoire spécifique
 func traceGraph(graphName string, xData []int, yData []float64, xAxisName string, yAxisName string, baseName string) {
 	items := make([]opts.LineData, 0)
 	for i := 0; i < len(yData); i++ {
@@ -125,6 +126,7 @@ func traceGraph(graphName string, xData []int, yData []float64, xAxisName string
 	page.Render(io.MultiWriter(f))
 }
 
+// Mesure la complexité en temps de la convolution
 func complexityBenchmark() {
 	fmt.Printf("Starting benchmark\n")
 	var imgSizes []int

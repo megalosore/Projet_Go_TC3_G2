@@ -116,6 +116,7 @@ func killWorkers(nbToKill int) {
 	}
 }
 
+// Découpe le slice en blocks à distribuer aux workers
 func generateInputs(inputSlice [][]int16, outputSlice [][]int16, doubleKernel bool, kernel1 [][]int16, kernel2 [][]int16, threshold float64, outputChannel chan bool) []*toCompute {
 	lenY := len(inputSlice)
 	lenX := len(inputSlice[0])
@@ -149,6 +150,7 @@ func generateInputs(inputSlice [][]int16, outputSlice [][]int16, doubleKernel bo
 	return inputs
 }
 
+// Remplit le channel d'input
 func feedInput(inputs []*toCompute) {
 	for _, input := range inputs {
 		inputChannel <- input
