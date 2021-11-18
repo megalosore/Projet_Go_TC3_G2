@@ -1,13 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"image"
 	"image/color"
 	"io"
+	"io/ioutil"
 	"os"
+	"strconv"
 )
 
 //Fonctions utilisés dans les convolutions et le serveur
@@ -96,9 +99,22 @@ func traceBenchmark(routineNumbers []int, times []float64) {
 	line.SetXAxis(routineNumbers).AddSeries("", items)
 	page := components.NewPage()
 	page.AddCharts(line)
-	f, err := os.Create("benchmark.html")
+
+	// On crée un répertoire pour enregistrer les benchmarks s'il n'existe pas déjà
+	if _, err := os.Stat("benchmark_results/"); os.IsNotExist(err) {
+		err = os.Mkdir("benchmark_results", 0755)
+		if err != nil {
+			fmt.Printf("Error while creating benchmark directory: check the permissions of the current directory.\n")
+		}
+	}
+	// On enregistre le benchmark sans écraser les résultats précédents
+	files, _ := ioutil.ReadDir("benchmark_results/")
+	filePath := "benchmark_results/benchmark_" + strconv.Itoa(len(files)+1) + ".html"
+	f, err := os.Create(filePath)
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error while saving benchmark.\n")
+	} else {
+		fmt.Printf("Benchmark result successfully saved at \"%s\".\n", filePath)
 	}
 	page.Render(io.MultiWriter(f))
 }
