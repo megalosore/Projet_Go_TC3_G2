@@ -137,7 +137,7 @@ func complexity_benchmark() {
 	for j := range imgSize {
 		fmt.Printf("Computation %d/%d\n", j, len(imgSize))
 		start := time.Now()
-		inputs := generateInputs(slice2D(imgSize[j], imgSize[j]), slice2D(imgSize[j], imgSize[j]), false, slice2D(3, 3), slice2D(3, 3), 0.5, outputChannel)
+		inputs := generateInputs(slice2D(imgSize[j], imgSize[j]), slice2D(imgSize[j], imgSize[j]), true, slice2D(3, 3), slice2D(3, 3), 0.5, outputChannel)
 		go feedInput(inputs)
 		nbReceived := 0
 		for nbReceived < len(inputs) {
