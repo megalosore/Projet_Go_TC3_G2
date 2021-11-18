@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-echarts/go-echarts/v2/charts"
-	"github.com/go-echarts/go-echarts/v2/components"
-	"github.com/go-echarts/go-echarts/v2/opts"
 	"image"
 	"image/color"
 	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
+
+	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/components"
+	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
 //Fonctions utilisés dans les convolutions et le serveur
