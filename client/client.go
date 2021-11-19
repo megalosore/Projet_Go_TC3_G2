@@ -18,7 +18,7 @@ func getArgs() (int, string, string, string, string) {
 	usageString := "Usage: go run client.go [-D=destination_path] [-A=algorithm] [-S=threshold_value] <server_portnumber> <image_url>\n"
 
 	destPtr := flag.String("D", "", "Destination Path for the output file") // Mise en place des flags pour préciser les arguments optionnels
-	algPtr := flag.String("A", "", "Name of the algorithme that will be used by the server")
+	algPtr := flag.String("A", "", "Name of the algorithme that will be used by the server: sobel or prewit, default: laplacien")
 	thresholdPtr := flag.String("S", "", "Value of the threshold that will be used by the server")
 	flag.Parse()
 

@@ -75,6 +75,7 @@ func handleConnection(connection net.Conn, connum int, benchmark bool, iteration
 			break
 		}
 
+		// On récupère une string contenant tous les arguments passés par le client et on la découpe
 		argsString := strings.TrimSuffix(inputLine, "\n")
 		argsList := strings.Split(argsString, "\\")
 		url := argsList[0]
@@ -217,6 +218,7 @@ func handleConnection(connection net.Conn, connum int, benchmark bool, iteration
 	}
 }
 
+// Télécharge une image sur un serveur et la convertis en objet image
 func loadImgFromURL(url string) (image.Image, error) {
 	resp, err := http.Get(url)
 	if err != nil {
