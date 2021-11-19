@@ -1,7 +1,9 @@
-import os 
+import subprocess
 import time
 
 if __name__ == '__main__':
+    processes = []
     for i in range(100):
-        os.popen("go run client.go -D=img"+str(i)+" 5454 https://stsci-opo.org/STScI-01EVSVZHYGRC7KMTEJ6DJFXE4N.png")
-time.sleep(1000)
+        processes.append(subprocess.Popen(["go", "run", "client.go", "-D=img"+str(i), "4312", "https://webypress.b-cdn.net/wp-content/uploads/2020/03/The-Ultimate-Coronavirus-Small-Business-Guide-WordPress-Tools.png"]))
+for p in processes:
+    p.wait()
