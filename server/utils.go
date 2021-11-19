@@ -100,6 +100,7 @@ func traceGraph(graphName string, xData []int, yData []float64, xAxisName string
 		charts.WithTitleOpts(opts.Title{Title: graphName}),
 		charts.WithYAxisOpts(opts.YAxis{Name: yAxisName, Scale: true}),
 		charts.WithXAxisOpts(opts.XAxis{Name: xAxisName, Scale: true}),
+		charts.WithDataZoomOpts(opts.DataZoom{Type: "slider", Start: float32(xData[0]), End: float32(xData[len(xData)-1]), XAxisIndex: []int{0}}),
 	)
 	line.SetXAxis(xData).AddSeries("", items)
 
