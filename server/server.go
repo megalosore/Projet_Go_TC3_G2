@@ -177,7 +177,10 @@ func handleConnection(connection net.Conn, connum int, benchmark bool, iteration
 			fmt.Printf("Starting benchmark\n")
 			var routineNumbers []int
 			// On détermine ici le nombre et l'abscisse des points
-			for i := 1; i < len(inputSlice); i += 100 {
+			for i := 1; i <= 30; i++ {
+				routineNumbers = append(routineNumbers, i)
+			}
+			for i := 31; i < len(inputSlice); i += 5 {
 				routineNumbers = append(routineNumbers, i)
 			}
 
